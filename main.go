@@ -26,6 +26,7 @@ func main() {
 
 	// Find out if our storage directory exists.
 	if !homeDirExists(u.HomeDir) {
+		fmt.Println("Creating ~/" + dataLocation)
 		err := createHomeDir(u.HomeDir)
 
 		if err != nil {
@@ -36,10 +37,13 @@ func main() {
 	os.Chdir(dataDir(u.HomeDir))
 
 	if staleDB() {
+		fmt.Println("Updating card database.")
 		err := updateDB()
 		if err != nil {
 			fmt.Println("Unable to update database.")
 		}
+	} else {
+		fmt.Println("Card database is up-to-date.")
 	}
 }
 

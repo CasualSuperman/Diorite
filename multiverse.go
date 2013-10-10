@@ -22,8 +22,12 @@ type Multiverse struct {
 
 func LoadMultiverse(r io.Reader) Multiverse {
 	d := gob.NewDecoder(r)
-	_ = d
-	return Multiverse{}
+	var container struct {
+		Data map[string]jsonSet
+		Date time.Time
+	}
+	d.Decode(&container)
+	return CreateMultiverse(container.Data, container.Date)
 }
 
 func CreateMultiverse(json map[string]jsonSet, modified time.Time) Multiverse {

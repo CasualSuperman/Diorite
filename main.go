@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"os"
 	"os/user"
@@ -37,6 +38,7 @@ func main() {
 	multiverseFile, err := os.Open(multiverseFileName)
 
 	var m Multiverse
+	multiverseLoaded := false
 
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
@@ -46,9 +48,13 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
+		fmt.Println("Loading local multiverse.")
 		m = LoadMultiverse(multiverseFile)
+		fmt.Println("Multiverse loaded.")
+		multiverseLoaded = true
 	}
 
+	fmt.Println("Checking for multiverse updates.")
 	mostRecentUpdate, err := onlineModifiedAt()
 
 	if err != nil {
@@ -56,12 +62,35 @@ func main() {
 	}
 
 	if mostRecentUpdate.After(m.Modified) {
+		fmt.Println("Multiverse update available! Downloading now.")
 		sets, err := downloadOnline()
 		if err != nil {
-			fmt.Println("Unable to download multiverse and no local database available. Unable to continue.")
-			os.Exit(1)
+			if !multiverseLoaded {
+				fmt.Println("Unable to download multiverse and no local database available. Unable to continue.")
+				os.Exit(1)
+			}
+			fmt.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		}
+		file, err := os.Create(multiverseFileName)
+		if err == nil {
+			defer file.Close()
+			fmt.Println("Saving downloaded multiverse.")
+			enc := gob.NewEncoder(file)
+			var data = struct {
+				Data map[string]jsonSet
+				Date time.Time
+			}{sets, mostRecentUpdate}
+			err := enc.Encode(data)
+			if err != nil {
+				fmt.Println("Error saving multiverse:", err)
+			}
+		} else {
+			fmt.Println(err)
+		}
+		fmt.Println("Transforming multiverse.")
 		m = CreateMultiverse(sets, time.Now())
+	} else {
+		fmt.Println("No updates available.")
 	}
 
 }

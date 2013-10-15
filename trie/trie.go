@@ -5,11 +5,11 @@ import "errors"
 type Trie struct {
 	value     interface{}
 	validLeaf bool
-	children  map[rune]Trie
+	children  map[rune]*Trie
 }
 
 func New() Trie {
-	return Trie{' ', false, make(map[rune]Trie)}
+	return Trie{' ', false, make(map[rune]*Trie)}
 }
 
 func (t Trie) Add(key string, val interface{}) error {
@@ -37,23 +37,22 @@ func (t Trie) add(r []rune, val interface{}) bool {
 			}
 			child.validLeaf = true
 			child.value = val
-			t.children[r[0]] = child
 		}
 	} else {
 		if len(r) > 1 {
 			child := Trie{
 				nil,
 				false,
-				make(map[rune]Trie),
+				make(map[rune]*Trie),
 			}
-			t.children[r[0]] = child
+			t.children[r[0]] = &child
 
 			return child.add(r[1:], val)
 		} else {
-			t.children[r[0]] = Trie{
+			t.children[r[0]] = &Trie{
 				val,
 				true,
-				make(map[rune]Trie),
+				make(map[rune]*Trie),
 			}
 		}
 	}
@@ -124,7 +123,6 @@ func (t Trie) remove(key []rune) bool {
 			} else {
 				child.validLeaf = false
 				child.value = nil
-				t.children[key[0]] = child
 			}
 			return true
 		}

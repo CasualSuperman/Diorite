@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/CasualSuperman/Diorite/multiverse"
 )
 
 const remoteDBLocation = "http://mtgjson.com/json/AllSets-x.json"
@@ -24,18 +26,19 @@ func onlineModifiedAt() (time.Time, error) {
 	return rModTime, nil
 }
 
-func downloadOnline() (map[string]jsonSet, error) {
+func downloadOnline() (multiverse.OnlineMultiverse, error) {
+	var structure multiverse.OnlineMultiverse
+
 	resp, err := http.Get(remoteDBLocation)
 	defer resp.Body.Close()
 
 	if err != nil {
-		return nil, err
+		return structure, err
 	}
 
-	structure := make(map[string]jsonSet)
-
 	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(&structure)
+	err = dec.Decode(&structure.Sets)
+	structure.Modified, _ = onlineModifiedAt()
 
 	return structure, err
 }

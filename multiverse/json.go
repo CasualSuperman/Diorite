@@ -1,8 +1,10 @@
-package main
+package multiverse
 
 import (
-	_ "encoding/json"
-	_ "io/ioutil"
+	"encoding/gob"
+	"io"
+	"sync"
+	"time"
 )
 
 type jsonRuling struct {
@@ -50,4 +52,47 @@ type jsonSet struct {
 	Type        string     `json:"type"`
 	Block       string     `json:"block"`
 	Cards       []jsonCard `json:"cards"`
+}
+
+type OnlineMultiverse struct {
+	Sets     map[string]jsonSet
+	Modified time.Time
+}
+
+func (o OnlineMultiverse) WriteTo(w io.Writer) error {
+	enc := gob.NewEncoder(w)
+	return enc.Encode(o)
+}
+
+func inflateOnlineMultiverse(r io.Reader) OnlineMultiverse {
+	d := gob.NewDecoder(r)
+	var om OnlineMultiverse
+	d.Decode(&om)
+	return om
+}
+
+var processedCards = struct {
+	sync.RWMutex
+	cards map[string]*Card
+}{cards: make(map[string]*Card)}
+
+func (jc *jsonCard) convert() *Card {
+	return nil
+}
+
+func CardFromJson(jc *jsonCard) *Card {
+	processedCards.RLock()
+	if c, ok := processedCards.cards[jc.Name]; ok {
+		processedCards.RUnlock()
+		return c
+	}
+	processedCards.RUnlock()
+	processedCards.Lock()
+	c := new(Card)
+	processedCards.cards[jc.Name] = c
+	processedCards.Unlock()
+
+	copyCardFields(jc, c)
+
+	return c
 }

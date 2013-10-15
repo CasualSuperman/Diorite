@@ -1,7 +1,7 @@
-package main
+package multiverse
 
 // Taken from rosettacode.org
-func levenshtein(s, t string) int {
+func levenshtein2(s, t string) int {
 	d := make([][]int, len(s)+1)
 	for i := range d {
 		d[i] = make([]int, len(t)+1)

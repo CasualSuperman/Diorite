@@ -1,7 +1,6 @@
-package main
+package multiverse
 
 import (
-	"sync"
 	"time"
 )
 
@@ -11,25 +10,29 @@ type rarity int
 type multiverseID int
 type setType byte
 
+// The colors of mana that exist in the Multiverse.
 var ManaColor = struct {
 	White, Blue, Black, Red, Green manaColor
 }{1, 2, 4, 8, 16}
 
+// The borders that cards have.
 var BorderColor = struct {
 	White, Black, Silver borderColor
 }{1, 2, 3}
 
+// Rarities of cards.
 var Rarity = struct {
 	Common, Uncommon, Rare, Mythic, Basic, Special rarity
 }{1, 2, 3, 4, 5, 6}
 
+// Set types.
 var SetType = struct {
 	Core, Expansion, Reprint, Box, Un, FromTheVault, PremiumDeck, DuelDeck, Starter, Commander, Planechase, Archenemy setType
 }{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 
 const setReleaseFormat = "2006-01-02"
 
-type set struct {
+type Set struct {
 	Name     string
 	Code     string
 	Released time.Time
@@ -39,7 +42,7 @@ type set struct {
 	Cards    []multiverseID
 }
 
-type card struct {
+type Card struct {
 	Name   string
 	Cmc    float32
 	Cost   string
@@ -63,7 +66,7 @@ type ruling struct {
 	Text string
 }
 
-func copyCardFields(jc *jsonCard, c *card) {
+func copyCardFields(jc *jsonCard, c *Card) {
 	c.Name = jc.Name
 	c.Cmc = jc.Cmc
 	c.Cost = jc.ManaCost
@@ -109,7 +112,7 @@ func copyCardFields(jc *jsonCard, c *card) {
 	c.Rulings = make([]ruling, len(jc.Rulings))
 }
 
-func SetFromJson(js jsonSet) set {
+func SetFromJson(js jsonSet) Set {
 	t, _ := time.Parse(setReleaseFormat, js.ReleaseDate)
 	var bColor borderColor
 	var sType setType
@@ -159,7 +162,7 @@ func SetFromJson(js jsonSet) set {
 		i++
 	}
 
-	return set{
+	return Set{
 		js.Name,
 		js.Code,
 		t,
@@ -170,31 +173,9 @@ func SetFromJson(js jsonSet) set {
 	}
 }
 
-var processedCards = struct {
-	sync.RWMutex
-	cards map[string]*card
-}{cards: make(map[string]*card)}
-
-func CardFromJson(jc *jsonCard) *card {
-	processedCards.RLock()
-	if c, ok := processedCards.cards[jc.Name]; ok {
-		processedCards.RUnlock()
-		return c
-	}
-	processedCards.RUnlock()
-	processedCards.Lock()
-	c := new(card)
-	processedCards.cards[jc.Name] = c
-	processedCards.Unlock()
-
-	copyCardFields(jc, c)
-
-	return c
-}
-
 type setSorter struct {
-	sets []set
-	by   func(s1, s2 *set) bool
+	sets []Set
+	by   func(s1, s2 *Set) bool
 }
 
 func (s *setSorter) Len() int {

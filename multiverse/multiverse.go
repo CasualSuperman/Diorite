@@ -1,46 +1,41 @@
-package main
+package multiverse
 
 import (
-	"encoding/gob"
 	"io"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/CasualSuperman/Diorite/trie"
+	"github.com/arbovm/levenshtein"
 	"github.com/dotCypress/phonetics"
 )
 
 type Multiverse struct {
-	Sets           map[string]*set
-	Cards          map[multiverseID]*card
-	Printings      map[*card][]multiverseID
-	Formats        map[string][]*set
+	Sets           map[string]*Set
+	Cards          map[multiverseID]*Card
+	Printings      map[*Card][]multiverseID
+	Formats        map[string][]*Set
 	Pronunciations trie.Trie
 	Modified       time.Time
 }
 
-func LoadMultiverse(r io.Reader) Multiverse {
-	d := gob.NewDecoder(r)
-	var container struct {
-		Data map[string]jsonSet
-		Date time.Time
-	}
-	d.Decode(&container)
-	return CreateMultiverse(container.Data, container.Date)
+func Inflate(r io.Reader) Multiverse {
+	om := inflateOnlineMultiverse(r)
+	return Create(om.Sets, om.Modified)
 }
 
-func CreateMultiverse(json map[string]jsonSet, modified time.Time) Multiverse {
+func Create(json map[string]jsonSet, modified time.Time) Multiverse {
 	m := Multiverse{
-		make(map[string]*set),
-		make(map[multiverseID]*card),
-		make(map[*card][]multiverseID),
-		make(map[string][]*set),
+		make(map[string]*Set),
+		make(map[multiverseID]*Card),
+		make(map[*Card][]multiverseID),
+		make(map[string][]*Set),
 		trie.New(),
 		modified,
 	}
 
-	sets := make([]set, len(json))
+	sets := make([]Set, len(json))
 
 	i := 0
 	for _, set := range json {
@@ -49,7 +44,7 @@ func CreateMultiverse(json map[string]jsonSet, modified time.Time) Multiverse {
 		i++
 	}
 
-	cards := make([]*card, len(m.Printings))
+	cards := make([]*Card, len(m.Printings))
 
 	i = 0
 	for card, _ := range m.Printings {
@@ -62,7 +57,7 @@ func CreateMultiverse(json map[string]jsonSet, modified time.Time) Multiverse {
 	return m
 }
 
-func addCardsToMap(set jsonSet, cards *map[multiverseID]*card, printings *map[*card][]multiverseID) {
+func addCardsToMap(set jsonSet, cards *map[multiverseID]*Card, printings *map[*Card][]multiverseID) {
 	for _, card := range set.Cards {
 		c := CardFromJson(&card)
 		s := (*printings)[c]
@@ -72,12 +67,12 @@ func addCardsToMap(set jsonSet, cards *map[multiverseID]*card, printings *map[*c
 	}
 }
 
-func (m *Multiverse) SearchByName(name string) []*card {
-	aggregator := make(map[string]*card)
+func (m *Multiverse) SearchByName(name string) []*Card {
+	aggregator := make(map[string]*Card)
 
 	for _, key := range m.Pronunciations.Search(phonetics.EncodeMetaphone(name)) {
 		c, _ := m.Pronunciations.Get(key)
-		crds := c.([]*card)
+		crds := c.([]*Card)
 		for _, crd := range crds {
 			for _, word := range strings.Split(crd.Name, " ") {
 				max := len(name)
@@ -85,7 +80,7 @@ func (m *Multiverse) SearchByName(name string) []*card {
 					max = len(word)
 				}
 				prefix := word[0:max]
-				if phonetics.DifferenceSoundex(name, prefix) >= 85 && levenshtein(name, prefix) <= len(name)/2+1 {
+				if phonetics.DifferenceSoundex(name, prefix) >= 85 && levenshtein.Distance(name, prefix) <= len(name)/2+1 {
 					aggregator[crd.Name] = crd
 					break
 				}
@@ -99,13 +94,13 @@ func (m *Multiverse) SearchByName(name string) []*card {
 			if maxLen > len(word) {
 				maxLen = len(word)
 			}
-			if levenshtein(name, word[0:maxLen]) < len(name)/4 {
+			if levenshtein.Distance(name, word[0:maxLen]) < len(name)/4 {
 				aggregator[crd.Name] = crd
 			}
 		}
 	}
 
-	finalResults := make([]*card, len(aggregator))
+	finalResults := make([]*Card, len(aggregator))
 	i := 0
 	for _, crd := range aggregator {
 		finalResults[i] = crd
@@ -119,7 +114,7 @@ func (m *Multiverse) SearchByName(name string) []*card {
 }
 
 type resultsList struct {
-	cards      []*card
+	cards      []*Card
 	searchTerm string
 }
 
@@ -140,7 +135,7 @@ func (r *resultsList) Less(i, j int) bool {
 		if maxI > len(word) {
 			maxI = len(word)
 		}
-		dist := levenshtein(r.searchTerm, word[0:maxI])
+		dist := levenshtein.Distance(r.searchTerm, word[0:maxI])
 		if dist < iDist {
 			iDist = dist
 		}
@@ -151,7 +146,7 @@ func (r *resultsList) Less(i, j int) bool {
 		if maxJ > len(word) {
 			maxJ = len(word)
 		}
-		dist := levenshtein(r.searchTerm, word[0:maxJ])
+		dist := levenshtein.Distance(r.searchTerm, word[0:maxJ])
 		if dist < jDist {
 			jDist = dist
 		}

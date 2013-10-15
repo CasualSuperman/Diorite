@@ -1,14 +1,14 @@
 package main
 
 import (
-	"encoding/gob"
 	"fmt"
 	"os"
 	"os/user"
 	"runtime"
+	"runtime/pprof"
 	"time"
 
-	_ "github.com/conformal/gotk3/gtk"
+	"github.com/CasualSuperman/Diorite/multiverse"
 )
 
 const dataLocation = ".diorite"
@@ -37,7 +37,7 @@ func main() {
 	os.Chdir(dataDir(u.HomeDir))
 	multiverseFile, err := os.Open(multiverseFileName)
 
-	var m Multiverse
+	var m multiverse.Multiverse
 	multiverseLoaded := false
 
 	if err != nil {
@@ -49,7 +49,11 @@ func main() {
 		}
 	} else {
 		fmt.Println("Loading local multiverse.")
-		m = LoadMultiverse(multiverseFile)
+
+		f, _ := os.Create("inflateprofile")
+		pprof.StartCPUProfile(f)
+		m = multiverse.Inflate(multiverseFile)
+		pprof.StopCPUProfile()
 		fmt.Println("Multiverse loaded.")
 		multiverseLoaded = true
 	}
@@ -63,7 +67,7 @@ func main() {
 
 	if mostRecentUpdate.After(m.Modified) {
 		fmt.Println("Multiverse update available! Downloading now.")
-		sets, err := downloadOnline()
+		om, err := downloadOnline()
 		if err != nil {
 			if !multiverseLoaded {
 				fmt.Println("Unable to download multiverse and no local database available. Unable to continue.")
@@ -75,12 +79,7 @@ func main() {
 		if err == nil {
 			defer file.Close()
 			fmt.Println("Saving downloaded multiverse.")
-			enc := gob.NewEncoder(file)
-			var data = struct {
-				Data map[string]jsonSet
-				Date time.Time
-			}{sets, mostRecentUpdate}
-			err := enc.Encode(data)
+			err := om.WriteTo(file)
 			if err != nil {
 				fmt.Println("Error saving multiverse:", err)
 			}
@@ -88,11 +87,30 @@ func main() {
 			fmt.Println(err)
 		}
 		fmt.Println("Transforming multiverse.")
-		m = CreateMultiverse(sets, time.Now())
+		m = multiverse.Create(om.Sets, time.Now())
 	} else {
 		fmt.Println("No updates available.")
 	}
 
+	f, _ := os.Create("searchprofile")
+	pprof.StartCPUProfile(f)
+	m.SearchByName("a")
+	m.SearchByName("av")
+	m.SearchByName("ava")
+	m.SearchByName("avat")
+	m.SearchByName("avata")
+	m.SearchByName("avatar")
+	cards := m.SearchByName("lightning")
+	pprof.StopCPUProfile()
+	names := make([]string, len(cards))
+	for i, card := range cards {
+		names[i] = card.Name
+	}
+	fmt.Println(names)
+
+	f, _ = os.Create("memprofile")
+	pprof.WriteHeapProfile(f)
+	f.Close()
 }
 
 func dataDir(baseDir string) string {

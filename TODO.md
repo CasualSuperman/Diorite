@@ -18,4 +18,4 @@ TODO
   The json is implementation specific but there's not really a good way to make a multiverse automatically without knowing what format it's coming in as.
   Find an interface to abstract it, even if it's slower than operating on a known structure?
   Is this necessary? Odds are we won't switch data providers and this will only make things slower.
-
+* Get a different db storage location for Windows (OSX too?) since it doesn't support the homedir method.

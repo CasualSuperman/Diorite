@@ -11,6 +11,7 @@ TODO
 	* Web with embedded browser
 * Retool multiverse to use less memory?
 * Get a ban list/restricted list in a downloadable format.
+    * searchthecity.me can do this! We should probably set up a service to ping their data occassionally and host it locally, since they don't send modified headers.
 * Should rehost mtgjson.com's source before release. (But give proper credit)
 * Find a card price API?
 * Find a way to pull the json logic out of the multiverse package

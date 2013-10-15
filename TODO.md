@@ -19,4 +19,4 @@ TODO
   Find an interface to abstract it, even if it's slower than operating on a known structure?
   Is this necessary? Odds are we won't switch data providers and this will only make things slower.
 * Get a different db storage location for Windows (OSX too?) since it doesn't support the homedir method.
-* Add compression to the gob'd multiverse cache.
+* ~~Add compression to the gob'd multiverse cache.~~

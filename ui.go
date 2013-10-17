@@ -5,7 +5,7 @@ import (
 )
 
 type statusUpdate struct {
-	msg string
+	msg  string
 	icon *gtk.Image
 }
 

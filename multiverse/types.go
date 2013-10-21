@@ -112,7 +112,7 @@ func copyCardFields(jc *jsonCard, c *Card) {
 	c.Rulings = make([]ruling, len(jc.Rulings))
 }
 
-func SetFromJson(js jsonSet) Set {
+func SetFromJson(js jsonSet) *Set {
 	t, _ := time.Parse(setReleaseFormat, js.ReleaseDate)
 	var bColor borderColor
 	var sType setType
@@ -162,7 +162,7 @@ func SetFromJson(js jsonSet) Set {
 		i++
 	}
 
-	return Set{
+	return &Set{
 		js.Name,
 		js.Code,
 		t,

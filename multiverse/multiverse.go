@@ -9,12 +9,12 @@ import (
 	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/arbovm/levenshtein"
 	"github.com/dotCypress/phonetics"
+	"github.com/glenn-brown/skiplist"
 )
 
 type Multiverse struct {
 	Sets           map[string]*Set
-	Cards          map[multiverseID]*Card
-	Printings      map[*Card][]multiverseID
+	Cards          *skiplist.T
 	Formats        map[string][]*Set
 	Pronunciations *trie.Trie
 	Modified       time.Time
@@ -28,28 +28,29 @@ func Inflate(r io.Reader) Multiverse {
 func Create(json map[string]jsonSet, modified time.Time) Multiverse {
 	m := Multiverse{
 		make(map[string]*Set),
-		make(map[multiverseID]*Card),
-		make(map[*Card][]multiverseID),
+		skiplist.New(),
 		make(map[string][]*Set),
 		nil,
 		modified,
 	}
 
-	sets := make([]Set, len(json))
-
-	i := 0
 	for _, set := range json {
-		sets[i] = SetFromJson(set)
-		addCardsToMap(set, &m.Cards, &m.Printings)
-		i++
+		m.Sets[set.Name] = SetFromJson(set)
+		for _, card := range set.Cards {
+			m.Cards.Insert(card.MultiverseId, CardFromJson(&card))
+		}
 	}
 
-	cards := make([]*Card, len(m.Printings))
+	var cards []*Card
 
-	i = 0
-	for card, _ := range m.Printings {
-		cards[i] = card
-		i++
+uniqueCard:
+	for card := m.Cards.Front(); card != nil; card = card.Next() {
+		for _, c := range cards {
+			if c == card.Value.(*Card) {
+				continue uniqueCard
+			}
+		}
+		cards = append(cards, card.Value.(*Card))
 	}
 
 	m.Pronunciations = generatePhoneticsMaps(cards)
@@ -88,14 +89,14 @@ func (m *Multiverse) SearchByName(name string) []*Card {
 		}
 	}
 
-	for crd := range m.Printings {
-		for _, word := range strings.Split(strings.ToLower(crd.Name), " ") {
+	for crdName, crd := range processedCards.cards {
+		for _, word := range strings.Split(strings.ToLower(crdName), " ") {
 			maxLen := len(name)
 			if maxLen > len(word) {
 				maxLen = len(word)
 			}
 			if levenshtein.Distance(name, word[0:maxLen]) < len(name)/4 {
-				aggregator[crd.Name] = crd
+				aggregator[crdName] = crd
 			}
 		}
 	}

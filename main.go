@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"code.google.com/p/lzma"
 	"github.com/CasualSuperman/Diorite/multiverse"
 )
 
@@ -53,14 +52,16 @@ func main() {
 		fmt.Println("Loading local multiverse.")
 
 		f, _ := os.Create("inflateprofile")
-		r := lzma.NewReader(multiverseFile)
 		pprof.StartCPUProfile(f)
-		m = multiverse.Inflate(r)
+		m, err = multiverse.Load(multiverseFile)
 		pprof.StopCPUProfile()
-		fmt.Println("Multiverse loaded.")
-		multiverseLoaded = true
+		if err != nil {
+			fmt.Println("Unable to load multiverse:", err)
+		} else {
+			fmt.Println("Multiverse loaded.")
+			multiverseLoaded = true
+		}
 		multiverseFile.Close()
-		r.Close()
 	}
 
 	fmt.Println("Checking for multiverse updates.")
@@ -82,16 +83,17 @@ func main() {
 			}
 			fmt.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		}
+		fmt.Println("Transforming multiverse.")
+		m = multiverse.Create(om.Sets, time.Now())
+
 		file, err := os.Create(multiverseFileName)
 		if err == nil {
 			saved.Add(1)
 			go func() {
 				defer file.Close()
 				defer saved.Done()
-				w := lzma.NewWriter(file)
 				fmt.Println("Saving downloaded multiverse.")
-				err := om.WriteTo(w)
-				w.Close()
+				err := m.WriteTo(file)
 				if err != nil {
 					fmt.Println("Error saving multiverse:", err)
 				}
@@ -99,8 +101,6 @@ func main() {
 		} else {
 			fmt.Println(err)
 		}
-		fmt.Println("Transforming multiverse.")
-		m = multiverse.Create(om.Sets, time.Now())
 	} else {
 		fmt.Println("No updates available.")
 	}

@@ -6,8 +6,8 @@ import (
 
 type manaColor byte
 type borderColor byte
-type rarity int
-type multiverseID int
+type rarity byte
+type multiverseID int32
 type setType byte
 
 // The colors of mana that exist in the Multiverse.

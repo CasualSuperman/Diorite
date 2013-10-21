@@ -10,10 +10,9 @@ import (
 func generatePhoneticsMaps(cards []*Card) *trie.Trie {
 	metaphoneMap := trie.New()
 
-	fixedCards := convertAllNames(cards)
-
-	for _, c := range fixedCards {
-		for _, word := range strings.Split(c.name, " ") {
+	for i, c := range cards {
+		name := preventUnicode(c.Name)
+		for _, word := range strings.Split(name, " ") {
 			if len(word) < 4 {
 				continue
 			}
@@ -21,12 +20,12 @@ func generatePhoneticsMaps(cards []*Card) *trie.Trie {
 
 			others, ok := metaphoneMap.Get(mtp)
 			if ok {
-				slice := others.([]*Card)
-				slice = append(slice, c.c)
+				slice := others.([]int)
+				slice = append(slice, i)
 				metaphoneMap.Remove(mtp)
 				metaphoneMap.Add(mtp, slice)
 			} else {
-				metaphoneMap.Add(mtp, []*Card{c.c})
+				metaphoneMap.Add(mtp, []int{i})
 			}
 		}
 	}
@@ -41,22 +40,4 @@ func preventUnicode(name string) string {
 		}
 	}
 	return strings.ToLower(name)
-}
-
-type namedCard struct {
-	name string
-	c    *Card
-}
-
-func convertAllNames(cards []*Card) []namedCard {
-	results := make([]namedCard, len(cards))
-
-	for i, card := range cards {
-		results[i] = namedCard{
-			preventUnicode(card.Name),
-			card,
-		}
-	}
-
-	return results
 }

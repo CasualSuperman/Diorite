@@ -9,8 +9,8 @@ TODO
 	* GTK
 	* QT
 	* Web with embedded browser
-* Retool multiverse to use less memory?
-    * Use a [skiplist](https://code.google.com/p/go-wiki/wiki/Projects#Lists) for multiverseId -> Card
+* ~~Retool multiverse to use less memory?~~
+    * ~~Use a [skiplist](https://code.google.com/p/go-wiki/wiki/Projects#Lists) for multiverseId -> Card~~
 * Get a ban list/restricted list in a downloadable format.
     * searchthecity.me can do this! We should probably set up a service to ping their data occassionally and host it locally, since they don't send modified headers.
 * Should rehost mtgjson.com's source before release. (But give proper credit)
@@ -21,3 +21,4 @@ TODO
   Is this necessary? Odds are we won't switch data providers and this will only make things slower.
 * Get a different db storage location for Windows (OSX too?) since it doesn't support the homedir method.
 * ~~Add compression to the gob'd multiverse cache.~~
+* ~~Store our Multiverse data instead of the JSON.~~

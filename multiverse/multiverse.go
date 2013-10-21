@@ -1,7 +1,6 @@
 package multiverse
 
 import (
-	"io"
 	"sort"
 	"strings"
 	"time"
@@ -15,21 +14,25 @@ import (
 type Multiverse struct {
 	Sets           map[string]*Set
 	Cards          *skiplist.T
-	Formats        map[string][]*Set
+	cardList       []*Card
 	Pronunciations *trie.Trie
 	Modified       time.Time
 }
 
-func Inflate(r io.Reader) Multiverse {
-	om := inflateOnlineMultiverse(r)
-	return Create(om.Sets, om.Modified)
+func getCardIndex(cardList []*Card, cardName string) int {
+	for i, card := range cardList {
+		if card.Name == cardName {
+			return i
+		}
+	}
+	return -1
 }
 
 func Create(json map[string]jsonSet, modified time.Time) Multiverse {
 	m := Multiverse{
 		make(map[string]*Set),
 		skiplist.New(),
-		make(map[string][]*Set),
+		make([]*Card, 0),
 		nil,
 		modified,
 	}
@@ -37,35 +40,20 @@ func Create(json map[string]jsonSet, modified time.Time) Multiverse {
 	for _, set := range json {
 		m.Sets[set.Name] = SetFromJson(set)
 		for _, card := range set.Cards {
-			m.Cards.Insert(card.MultiverseId, CardFromJson(&card))
-		}
-	}
-
-	var cards []*Card
-
-uniqueCard:
-	for card := m.Cards.Front(); card != nil; card = card.Next() {
-		for _, c := range cards {
-			if c == card.Value.(*Card) {
-				continue uniqueCard
+			index := getCardIndex(m.cardList, card.Name)
+			if index == -1 {
+				index = len(m.cardList)
+				c := new(Card)
+				copyCardFields(&card, c)
+				m.cardList = append(m.cardList, c)
 			}
+			m.Cards.Insert(card.MultiverseId, index)
 		}
-		cards = append(cards, card.Value.(*Card))
 	}
 
-	m.Pronunciations = generatePhoneticsMaps(cards)
+	m.Pronunciations = generatePhoneticsMaps(m.cardList)
 
 	return m
-}
-
-func addCardsToMap(set jsonSet, cards *map[multiverseID]*Card, printings *map[*Card][]multiverseID) {
-	for _, card := range set.Cards {
-		c := CardFromJson(&card)
-		s := (*printings)[c]
-		s = append(s, multiverseID(card.MultiverseId))
-		(*printings)[c] = s
-		(*cards)[multiverseID(card.MultiverseId)] = c
-	}
 }
 
 func (m *Multiverse) SearchByName(name string) []*Card {
@@ -73,8 +61,9 @@ func (m *Multiverse) SearchByName(name string) []*Card {
 
 	for _, key := range m.Pronunciations.Search(phonetics.EncodeMetaphone(name)) {
 		c, _ := m.Pronunciations.Get(key)
-		crds := c.([]*Card)
-		for _, crd := range crds {
+		crds := c.([]int)
+		for _, i := range crds {
+			crd := m.cardList[i]
 			for _, word := range strings.Split(crd.Name, " ") {
 				max := len(name)
 				if max > len(word) {

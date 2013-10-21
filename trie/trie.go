@@ -8,8 +8,8 @@ type Trie struct {
 	children  map[rune]*Trie
 }
 
-func New() Trie {
-	return Trie{' ', false, make(map[rune]*Trie)}
+func New() *Trie {
+	return &Trie{' ', false, make(map[rune]*Trie)}
 }
 
 func (t Trie) Add(key string, val interface{}) error {

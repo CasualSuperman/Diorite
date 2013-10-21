@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/user"
 	"runtime"
-	"runtime/pprof"
 	"sync"
 	"time"
 
@@ -50,18 +49,15 @@ func main() {
 		}
 	} else {
 		fmt.Println("Loading local multiverse.")
-
-		f, _ := os.Create("inflateprofile")
-		pprof.StartCPUProfile(f)
 		m, err = multiverse.Load(multiverseFile)
-		pprof.StopCPUProfile()
-		if err != nil {
-			fmt.Println("Unable to load multiverse:", err)
-		} else {
-			fmt.Println("Multiverse loaded.")
-			multiverseLoaded = true
-		}
 		multiverseFile.Close()
+	}
+
+	if err != nil {
+		fmt.Println("Unable to load multiverse:", err)
+	} else {
+		fmt.Println("Multiverse loaded.")
+		multiverseLoaded = true
 	}
 
 	fmt.Println("Checking for multiverse updates.")
@@ -87,7 +83,10 @@ func main() {
 		m = multiverse.Create(om.Sets, time.Now())
 
 		file, err := os.Create(multiverseFileName)
-		if err == nil {
+
+		if err != nil {
+			fmt.Println(err)
+		} else {
 			saved.Add(1)
 			go func() {
 				defer file.Close()
@@ -98,32 +97,19 @@ func main() {
 					fmt.Println("Error saving multiverse:", err)
 				}
 			}()
-		} else {
-			fmt.Println(err)
 		}
 	} else {
 		fmt.Println("No updates available.")
 	}
 
-	f, _ := os.Create("searchprofile")
-	pprof.StartCPUProfile(f)
-	m.SearchByName("a")
-	m.SearchByName("av")
-	m.SearchByName("ava")
-	m.SearchByName("avat")
-	m.SearchByName("avata")
-	m.SearchByName("avatar")
-	cards := m.SearchByName("lightning")
-	pprof.StopCPUProfile()
+	cards := m.SearchByName("avat")
+
 	names := make([]string, len(cards))
 	for i, card := range cards {
 		names[i] = card.Name
 	}
 	fmt.Println(names)
 
-	f, _ = os.Create("memprofile")
-	pprof.WriteHeapProfile(f)
-	f.Close()
 	saved.Wait()
 }
 

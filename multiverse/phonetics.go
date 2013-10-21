@@ -1,15 +1,13 @@
 package multiverse
 
 import (
-	//"runtime"
 	"strings"
-	//"sync"
 
 	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/dotCypress/phonetics"
 )
 
-func generatePhoneticsMaps(cards []*Card) trie.Trie {
+func generatePhoneticsMaps(cards []*Card) *trie.Trie {
 	metaphoneMap := trie.New()
 
 	fixedCards := convertAllNames(cards)
@@ -51,35 +49,6 @@ type namedCard struct {
 }
 
 func convertAllNames(cards []*Card) []namedCard {
-	/*
-		var wg sync.WaitGroup
-		workerCount := runtime.NumCPU()
-		results := make([]namedCard, len(cards))
-
-		pieceLen := len(cards) / workerCount
-
-		for i := 0; i < workerCount; i++ {
-			start := i * pieceLen
-			end := start + pieceLen
-
-			if i == workerCount-1 {
-				end = len(cards)
-			}
-
-			wg.Add(1)
-			go func(cards []*Card, start int) {
-				defer wg.Done()
-				for i, c := range cards {
-					results[i+start] = namedCard{
-						preventUnicode(c.Name),
-						c,
-					}
-				}
-			}(cards[start:end], start)
-		}
-
-		wg.Wait()
-	*/
 	results := make([]namedCard, len(cards))
 
 	for i, card := range cards {

@@ -16,7 +16,7 @@ type Multiverse struct {
 	Cards          map[multiverseID]*Card
 	Printings      map[*Card][]multiverseID
 	Formats        map[string][]*Set
-	Pronunciations trie.Trie
+	Pronunciations *trie.Trie
 	Modified       time.Time
 }
 
@@ -31,7 +31,7 @@ func Create(json map[string]jsonSet, modified time.Time) Multiverse {
 		make(map[multiverseID]*Card),
 		make(map[*Card][]multiverseID),
 		make(map[string][]*Set),
-		trie.New(),
+		nil,
 		modified,
 	}
 

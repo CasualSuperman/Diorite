@@ -4,6 +4,7 @@ TODO
 * Make card searching handle multiple words.
     * This means making searches for multiple partial words work proprly
 	* Also means sorting based on a different closeness metric at the end
+	* N-Gram similarity?
 * Figure out what kind of GUI we're using.
 	* QML
 	* GTK

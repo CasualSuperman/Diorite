@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/user"
 	"runtime"
@@ -102,11 +103,20 @@ func main() {
 		fmt.Println("No updates available.")
 	}
 
-	cards := m.SearchByName("avat")
+	cards := m.FuzzyNameSearch("aetherling", 15)
 
 	names := make([]string, len(cards))
 	for i, card := range cards {
 		names[i] = card.Name
+		fmt.Println(card.Name)
+
+		if math.IsNaN(float64(card.Toughness.Val)) {
+			if card.IsCreature() {
+				fmt.Println(card.Toughness.Original)
+			}
+		} else {
+			fmt.Println(card.Toughness.Val)
+		}
 	}
 	fmt.Println(names)
 

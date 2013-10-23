@@ -1,0 +1,37 @@
+package multiverse
+
+import "strings"
+
+type nGram struct {
+	grams []string
+	size  int
+}
+
+func newNGram(phrase string, size int) nGram {
+	var n = nGram{nil, size}
+	phrase = strings.ToLower(phrase)
+	phrase = preventUnicode(phrase)
+	words := strings.Split(phrase, " ")
+
+	for _, word := range words {
+		for i := size - 1; i < len(word); i++ {
+			n.grams = append(n.grams, word[i-size+1:i+1])
+		}
+	}
+	return n
+}
+
+func (n nGram) Similarity(phrase string) float32 {
+	result := float32(0)
+	m := newNGram(phrase, n.size)
+
+	for _, myGram := range n.grams {
+		for _, oGram := range m.grams {
+			if myGram == oGram {
+				result += float32(n.size)
+			}
+		}
+	}
+
+	return result
+}

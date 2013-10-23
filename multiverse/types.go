@@ -1,6 +1,8 @@
 package multiverse
 
 import (
+	"math"
+	"strconv"
 	"time"
 )
 
@@ -58,6 +60,11 @@ type Card struct {
 	Artist string
 	Number string
 
+	Power, Toughness struct {
+		Val      float32
+		Original string
+	}
+
 	Rulings []ruling
 }
 
@@ -110,6 +117,28 @@ func copyCardFields(jc *jsonCard, c *Card) {
 	c.Number = jc.Number
 
 	c.Rulings = make([]ruling, len(jc.Rulings))
+
+	power, err := strconv.ParseFloat(jc.Power, 32)
+
+	if err == nil {
+		c.Power.Val = float32(power)
+	} else {
+		c.Power.Val = float32(math.NaN())
+		if jc.Power != "" {
+			c.Power.Original = jc.Power
+		}
+	}
+
+	toughness, err := strconv.ParseFloat(jc.Toughness, 32)
+
+	if err == nil {
+		c.Toughness.Val = float32(toughness)
+	} else {
+		c.Toughness.Val = float32(math.NaN())
+		if jc.Toughness != "" {
+			c.Toughness.Original = jc.Toughness
+		}
+	}
 }
 
 func SetFromJson(js jsonSet) *Set {

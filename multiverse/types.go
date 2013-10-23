@@ -218,3 +218,12 @@ func (s *setSorter) Swap(i, j int) {
 func (s *setSorter) Less(i, j int) bool {
 	return s.by(&s.sets[i], &s.sets[j])
 }
+
+func (c *Card) IsCreature() bool {
+	for _, supertype := range c.Supertypes {
+		if supertype == "Creature" {
+			return true
+		}
+	}
+	return false
+}

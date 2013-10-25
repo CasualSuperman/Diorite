@@ -2,27 +2,32 @@ package trie
 
 import "errors"
 
-// A Trie is similar to a Map, but mapTrieost operations are O(log n), and it allows for finding similar elements.
-type Trie interface {
-	Add(string, interface{}) error
-	Get(string) (interface{}, bool)
-	Search(string) []string
-	Remove(string) error
+type altBranch struct {
+	letter rune
+	branch *altTrie
 }
 
-type mapTrie struct {
+type altTrie struct {
 	value     interface{}
 	validLeaf bool
-	children  map[rune]*mapTrie
+	children  []altBranch
 }
 
-// New returns an initialized, empty Trie.
-func New() *mapTrie {
-	return &mapTrie{nil, false, make(map[rune]*mapTrie)}
+func Alt() *altTrie {
+	return &altTrie{nil, false, nil}
+}
+
+func (t altTrie) getChild(r rune) int {
+	for i, child := range t.children {
+		if child.letter == r {
+			return i
+		}
+	}
+	return -1
 }
 
 // Add an element to the Trie, mapped to the given value.
-func (t *mapTrie) Add(key string, val interface{}) error {
+func (t *altTrie) Add(key string, val interface{}) error {
 	runes := []rune(key)
 	exists := t.add(runes, val)
 
@@ -33,62 +38,61 @@ func (t *mapTrie) Add(key string, val interface{}) error {
 	return nil
 }
 
-func (t mapTrie) add(r []rune, val interface{}) bool {
+func (t *altTrie) add(r []rune, val interface{}) bool {
 	if len(r) == 0 {
 		return false
 	}
 
-	if child, ok := t.children[r[0]]; ok {
+	if i := t.getChild(r[0]); i != -1 {
 		if len(r) > 1 {
-			return child.add(r[1:], val)
+			return t.children[i].branch.add(r[1:], val)
 		}
-		if child.validLeaf {
+		if t.children[i].branch.validLeaf {
 			return true
 		}
+		child := t.children[i].branch
 		child.validLeaf = true
 		child.value = val
 	} else {
 		if len(r) > 1 {
-			child := mapTrie{
-				nil,
-				false,
-				make(map[rune]*mapTrie),
+			child := altBranch{
+				r[0],
+				&altTrie{},
 			}
-			t.children[r[0]] = &child
+			t.children = append(t.children, child)
 
-			return child.add(r[1:], val)
+			return child.branch.add(r[1:], val)
 		}
-		t.children[r[0]] = &mapTrie{
-			val,
-			true,
-			make(map[rune]*mapTrie),
-		}
+		t.children = append(t.children, altBranch{
+			r[0],
+			&altTrie{val, true, nil},
+		})
 	}
 	return false
 }
 
 // Get a value from the Trie.
 // Uses a comma ok format.
-func (t *mapTrie) Get(key string) (interface{}, bool) {
+func (t *altTrie) Get(key string) (interface{}, bool) {
 	if len(key) == 0 {
 		return nil, false
 	}
 	return t.get([]rune(key))
 }
 
-func (t mapTrie) get(key []rune) (interface{}, bool) {
+func (t *altTrie) get(key []rune) (interface{}, bool) {
 	if len(key) == 0 {
 		return t.value, t.validLeaf
 	}
-	if child, ok := t.children[key[0]]; ok {
-		return child.get(key[1:])
+	if i := t.getChild(key[0]); i != -1 {
+		return t.children[i].branch.get(key[1:])
 	}
 	return nil, false
 }
 
 // Search the Trie for all keys starting with the key.
 // A full listing of the Trie is possible using t.Search("")
-func (t *mapTrie) Search(key string) []string {
+func (t *altTrie) Search(key string) []string {
 	results := t.search([]rune(key))
 	for i, result := range results {
 		results[i] = key + result
@@ -96,11 +100,11 @@ func (t *mapTrie) Search(key string) []string {
 	return results
 }
 
-func (t mapTrie) search(key []rune) []string {
+func (t *altTrie) search(key []rune) []string {
 	if len(key) == 0 {
 		var options []string
 		for r, child := range t.children {
-			for _, option := range child.search(key) {
+			for _, option := range child.branch.search(key) {
 				options = append(options, string(r)+option)
 			}
 		}
@@ -109,15 +113,15 @@ func (t mapTrie) search(key []rune) []string {
 		}
 		return options
 	}
-	if child, ok := t.children[key[0]]; ok {
-		return child.search(key[1:])
+	if i := t.getChild(key[0]); i != -1 {
+		return t.children[i].branch.search(key[1:])
 	}
 	return make([]string, 0)
 }
 
 // Remove the key from the Trie.
 // The Trie will compact itself if possible.
-func (t *mapTrie) Remove(key string) error {
+func (t *altTrie) Remove(key string) error {
 	runes := []rune(key)
 
 	if !t.remove(runes) {
@@ -127,11 +131,12 @@ func (t *mapTrie) Remove(key string) error {
 	return nil
 }
 
-func (t mapTrie) remove(key []rune) bool {
+func (t *altTrie) remove(key []rune) bool {
 	if len(key) == 1 {
-		if child, ok := t.children[key[0]]; ok {
+		if i := t.getChild(key[0]); i != -1 {
+			child := t.children[i].branch
 			if len(child.children) == 0 {
-				delete(t.children, key[0])
+				t.children = append(t.children[:i], t.children[i+1:]...)
 			} else {
 				child.validLeaf = false
 				child.value = nil
@@ -141,11 +146,12 @@ func (t mapTrie) remove(key []rune) bool {
 		return false
 	}
 
-	if child, ok := t.children[key[0]]; ok {
+	if i := t.getChild(key[0]); i != -1 {
+		child := t.children[i].branch
 		ret := child.remove(key[1:])
 
 		if !child.validLeaf && len(child.children) == 0 {
-			delete(t.children, key[0])
+			t.children = append(t.children[:i], t.children[i+1:]...)
 		}
 		return ret
 	}

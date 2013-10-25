@@ -10,8 +10,8 @@ import (
 	"github.com/dotCypress/phonetics"
 )
 
-func generatePhoneticsMaps(cards []*Card) *trie.Trie {
-	metaphoneMap := trie.New()
+func generatePhoneticsMaps(cards []*Card) trie.Trie {
+	metaphoneMap := trie.Alt()
 
 	for i, c := range cards {
 		name := preventUnicode(c.Name)

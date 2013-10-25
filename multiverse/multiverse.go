@@ -15,7 +15,7 @@ type Multiverse struct {
 		Printings *skiplist.T
 		List      []*Card
 	}
-	Pronunciations *trie.Trie
+	Pronunciations trie.Trie
 	Modified       time.Time
 }
 

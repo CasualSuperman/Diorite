@@ -1,13 +1,14 @@
 package trie
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
 )
 
-func TestNew(t *testing.T) {
-	trie := New()
+func TestAltAlt(t *testing.T) {
+	trie := Alt()
 
 	_, ok := trie.Get("Doesn't exist")
 
@@ -16,8 +17,8 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestAdd(t *testing.T) {
-	trie := New()
+func TestAltAdd(t *testing.T) {
+	trie := Alt()
 
 	if trie.Add("thing", 2) != nil {
 		t.Fail()
@@ -27,8 +28,8 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestDuplicateAdd(t *testing.T) {
-	trie := New()
+func TestAltDuplicateAdd(t *testing.T) {
+	trie := Alt()
 
 	trie.Add("thing", 2)
 	if trie.Add("thing", 7) == nil {
@@ -36,8 +37,8 @@ func TestDuplicateAdd(t *testing.T) {
 	}
 }
 
-func TestSubstringAdd(t *testing.T) {
-	trie := New()
+func TestAltSubstringAdd(t *testing.T) {
+	trie := Alt()
 
 	trie.Add("sandlot", 1)
 	err := trie.Add("sand", 7)
@@ -49,15 +50,15 @@ func TestSubstringAdd(t *testing.T) {
 	val, ok := trie.Get("sand")
 
 	if !ok {
-		t.Error("Could not find substring")
+		t.Fatal("Could not find substring")
 	}
 	if val.(int) != 7 {
 		t.Error("Could not get value for substring")
 	}
 }
 
-func TestSearch(t *testing.T) {
-	trie := New()
+func TestAltSearch(t *testing.T) {
+	trie := Alt()
 	trie.Add("sand", 1)
 	trie.Add("sandpaper", 1)
 	trie.Add("sanity", 2)
@@ -69,14 +70,15 @@ func TestSearch(t *testing.T) {
 	}
 }
 
-func TestRemove(t *testing.T) {
-	trie := New()
+func TestAltRemove(t *testing.T) {
+	trie := Alt()
 	trie.Add("sand", 1)
 	trie.Add("sandlot", 1)
 
 	if x := trie.Remove("sand"); x != nil {
 		t.Error("Couldn't remove sand.")
 	} else if len(trie.Search("sand")) != 1 {
+		fmt.Println(trie)
 		t.Logf("%v\n", trie.Search("sand"))
 		t.Error("Sand wasn't removed.")
 	}
@@ -90,13 +92,13 @@ func TestRemove(t *testing.T) {
 		t.Error("Sandlot wasn't removed.")
 	}
 
-	if len(trie.children['s'].children['a'].children['n'].children) != 1 {
-		t.Logf("%v\n", trie.children['s'].children['a'].children['n'].children)
+	if len(trie.children[0].branch.children[0].branch.children[0].branch.children) != 1 {
+		t.Logf("%v\n", trie.children[0].branch.children[0].branch.children[0].branch.children)
 		t.Error("Subtree wasn't deleted properly.")
 	}
 }
 
-func BenchmarkAdd(b *testing.B) {
+func BenchmarkAltAdd(b *testing.B) {
 	list, err := ioutil.ReadFile("/usr/share/dict/words")
 
 	if err != nil {
@@ -104,7 +106,7 @@ func BenchmarkAdd(b *testing.B) {
 	}
 
 	words := strings.Split(string(list), "\n")
-	t := New()
+	t := Alt()
 
 	b.ResetTimer()
 	for i, j := 0, 0; i < b.N; i, j = i+1, j+1 {
@@ -116,7 +118,7 @@ func BenchmarkAdd(b *testing.B) {
 
 }
 
-func BenchmarkGet(b *testing.B) {
+func BenchmarkAltGet(b *testing.B) {
 	list, err := ioutil.ReadFile("/usr/share/dict/words")
 
 	if err != nil {
@@ -124,7 +126,7 @@ func BenchmarkGet(b *testing.B) {
 	}
 
 	words := strings.Split(string(list), "\n")
-	t := New()
+	t := Alt()
 
 	for _, word := range words {
 		t.Add(word, true)
@@ -140,7 +142,7 @@ func BenchmarkGet(b *testing.B) {
 
 }
 
-func BenchmarkSearch(b *testing.B) {
+func BenchmarkAltSearch(b *testing.B) {
 	list, err := ioutil.ReadFile("/usr/share/dict/words")
 
 	if err != nil {
@@ -148,7 +150,7 @@ func BenchmarkSearch(b *testing.B) {
 	}
 
 	words := strings.Split(string(list), "\n")
-	t := New()
+	t := Alt()
 
 	for _, word := range words {
 		t.Add(word, true)

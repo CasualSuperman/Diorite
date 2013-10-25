@@ -1,13 +1,9 @@
 package multiverse
 
 import (
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/CasualSuperman/Diorite/trie"
-	"github.com/arbovm/levenshtein"
-	"github.com/dotCypress/phonetics"
 	"github.com/glenn-brown/skiplist"
 )
 

@@ -118,16 +118,3 @@ func main() {
 
 	saved.Wait()
 }
-
-func dataDir(baseDir string) string {
-	return baseDir + string(os.PathSeparator) + dataLocation
-}
-
-func homeDirExists(baseDir string) bool {
-	dir, err := os.Stat(dataDir(baseDir))
-	return err == nil && dir.IsDir()
-}
-
-func createHomeDir(baseDir string) error {
-	return os.Mkdir(dataDir(baseDir), os.ModePerm|os.ModeDir)
-}

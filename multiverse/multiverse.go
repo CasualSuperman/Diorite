@@ -11,6 +11,8 @@ import (
 	"github.com/glenn-brown/skiplist"
 )
 
+// Multiverse is an entire Magic: The Gathering multiverse.
+// It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
 type Multiverse struct {
 	Sets           map[string]*Set
 	Cards          *skiplist.T
@@ -28,17 +30,15 @@ func getCardIndex(cardList []*Card, cardName string) int {
 	return -1
 }
 
-func Create(json map[string]jsonSet, modified time.Time) Multiverse {
-	m := Multiverse{
-		make(map[string]*Set),
-		skiplist.New(),
-		make([]*Card, 0),
-		nil,
-		modified,
-	}
+// Create a Multiverse from the provided map of sets, with a modification time of the provided time.
+func Create(json map[string]jsonSet, modified time.Time) (m Multiverse) {
+	m.Sets = make(map[string]*Set)
+	m.Cards = skiplist.New()
+	m.cardList = make([]*Card, 0)
+	m.Modified = modified
 
 	for _, set := range json {
-		m.Sets[set.Name] = SetFromJson(set)
+		m.Sets[set.Name] = setFromJSON(set)
 		for _, card := range set.Cards {
 			index := getCardIndex(m.cardList, card.Name)
 			if index == -1 {
@@ -47,58 +47,11 @@ func Create(json map[string]jsonSet, modified time.Time) Multiverse {
 				copyCardFields(&card, c)
 				m.cardList = append(m.cardList, c)
 			}
-			m.Cards.Insert(card.MultiverseId, index)
+			m.Cards.Insert(card.MultiverseID, index)
 		}
 	}
 
 	m.Pronunciations = generatePhoneticsMaps(m.cardList)
 
-	return m
-}
-
-func (m *Multiverse) SearchByName(name string) []*Card {
-	aggregator := make(map[string]*Card)
-
-	for _, key := range m.Pronunciations.Search(phonetics.EncodeMetaphone(name)) {
-		c, _ := m.Pronunciations.Get(key)
-		crds := c.([]int)
-		for _, i := range crds {
-			crd := m.cardList[i]
-			for _, word := range strings.Split(crd.Name, " ") {
-				max := len(name)
-				if max > len(word) {
-					max = len(word)
-				}
-				prefix := word[0:max]
-				if phonetics.DifferenceSoundex(name, prefix) >= 85 && levenshtein.Distance(name, prefix) <= len(name)/2+1 {
-					aggregator[crd.Name] = crd
-					break
-				}
-			}
-		}
-	}
-
-	for crdName, crd := range processedCards.cards {
-		for _, word := range strings.Split(preventUnicode(crdName), " ") {
-			maxLen := len(name)
-			if maxLen > len(word) {
-				maxLen = len(word)
-			}
-			if levenshtein.Distance(name, word[0:maxLen]) < len(name)/4 {
-				aggregator[crdName] = crd
-			}
-		}
-	}
-
-	finalResults := make([]*Card, len(aggregator))
-	i := 0
-	for _, crd := range aggregator {
-		finalResults[i] = crd
-		i++
-	}
-
-	toSort := resultsList{finalResults, preventUnicode(name)}
-	sort.Sort(&toSort)
-
-	return finalResults
+	return
 }

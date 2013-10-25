@@ -7,7 +7,6 @@ import (
 	"os/user"
 	"runtime"
 	"sync"
-	"time"
 
 	"github.com/CasualSuperman/Diorite/multiverse"
 )
@@ -50,7 +49,7 @@ func main() {
 		}
 	} else {
 		fmt.Println("Loading local multiverse.")
-		m, err = multiverse.Load(multiverseFile)
+		m, err = multiverse.Read(multiverseFile)
 		multiverseFile.Close()
 	}
 
@@ -81,7 +80,7 @@ func main() {
 			fmt.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		}
 		fmt.Println("Transforming multiverse.")
-		m = multiverse.Create(om.Sets, time.Now())
+		m = multiverse.Create(om.Sets, om.Modified)
 
 		file, err := os.Create(multiverseFileName)
 
@@ -93,7 +92,7 @@ func main() {
 				defer file.Close()
 				defer saved.Done()
 				fmt.Println("Saving downloaded multiverse.")
-				err := m.WriteTo(file)
+				err := m.Write(file)
 				if err != nil {
 					fmt.Println("Error saving multiverse:", err)
 				}

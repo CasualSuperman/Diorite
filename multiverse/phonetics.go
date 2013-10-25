@@ -88,6 +88,7 @@ func (f fuzzySearchList) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
 
+// FuzzyNameSearch searches for a card with a similar name to the searchPhrase, and returns count or less of the most likely results.
 func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	var aggregator fuzzySearchList
 	searchPhrase = preventUnicode(searchPhrase)

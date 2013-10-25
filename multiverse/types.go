@@ -34,6 +34,7 @@ var SetType = struct {
 
 const setReleaseFormat = "2006-01-02"
 
+// Set is a Magic: The Gathering set, such as Innistrad or Zendikar.
 type Set struct {
 	Name     string
 	Code     string
@@ -44,6 +45,7 @@ type Set struct {
 	Cards    []multiverseID
 }
 
+// Card is a Magic: The Gathering card, such as Ætherling or Blightning.
 type Card struct {
 	Name   string
 	Cmc    float32
@@ -141,7 +143,7 @@ func copyCardFields(jc *jsonCard, c *Card) {
 	}
 }
 
-func SetFromJson(js jsonSet) *Set {
+func setFromJSON(js jsonSet) *Set {
 	t, _ := time.Parse(setReleaseFormat, js.ReleaseDate)
 	var bColor borderColor
 	var sType setType
@@ -187,7 +189,7 @@ func SetFromJson(js jsonSet) *Set {
 
 	i := 0
 	for _, card := range js.Cards {
-		ids[i] = multiverseID(card.MultiverseId)
+		ids[i] = multiverseID(card.MultiverseID)
 		i++
 	}
 
@@ -219,6 +221,7 @@ func (s *setSorter) Less(i, j int) bool {
 	return s.by(&s.sets[i], &s.sets[j])
 }
 
+// IsCreature is a convenience method that returns if the card is a creature.
 func (c *Card) IsCreature() bool {
 	for _, supertype := range c.Supertypes {
 		if supertype == "Creature" {

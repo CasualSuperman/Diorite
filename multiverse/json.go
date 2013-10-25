@@ -1,9 +1,6 @@
 package multiverse
 
 import (
-	"encoding/gob"
-	"io"
-	"sync"
 	"time"
 )
 
@@ -37,7 +34,7 @@ type jsonCard struct {
 	Toughness string `json:"toughness"`
 
 	Layout       string `json:"layout"`
-	MultiverseId int    `json:"multiverseid"`
+	MultiverseID int    `json:"multiverseid"`
 
 	ImageName string `json:"imageName"`
 
@@ -54,45 +51,9 @@ type jsonSet struct {
 	Cards       []jsonCard `json:"cards"`
 }
 
+// OnlineMultiverse is a convenience type for the conversion type from mtgjson.com.
+// Eventually this will be removed.
 type OnlineMultiverse struct {
 	Sets     map[string]jsonSet
 	Modified time.Time
-}
-
-func (o OnlineMultiverse) WriteTo(w io.Writer) error {
-	enc := gob.NewEncoder(w)
-	return enc.Encode(o)
-}
-
-func inflateOnlineMultiverse(r io.Reader) OnlineMultiverse {
-	d := gob.NewDecoder(r)
-	var om OnlineMultiverse
-	d.Decode(&om)
-	return om
-}
-
-var processedCards = struct {
-	sync.RWMutex
-	cards map[string]*Card
-}{cards: make(map[string]*Card)}
-
-func (jc *jsonCard) convert() *Card {
-	return nil
-}
-
-func CardFromJson(jc *jsonCard) *Card {
-	processedCards.RLock()
-	if c, ok := processedCards.cards[jc.Name]; ok {
-		processedCards.RUnlock()
-		return c
-	}
-	processedCards.RUnlock()
-	processedCards.Lock()
-	c := new(Card)
-	processedCards.cards[jc.Name] = c
-	processedCards.Unlock()
-
-	copyCardFields(jc, c)
-
-	return c
 }

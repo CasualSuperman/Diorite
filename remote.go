@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -12,33 +13,49 @@ const remoteDBLocation = "http://mtgjson.com/json/AllSets-x.json"
 const lastModifiedFormat = time.RFC1123
 
 func onlineModifiedAt() (time.Time, error) {
-	var netClient http.Client
+	resp, err := getOnline("HEAD")
 
-	resp, err := netClient.Head(remoteDBLocation)
 	if err != nil {
 		return time.Time{}, err
 	}
 	remoteModified := resp.Header.Get("Last-Modified")
-	rModTime, _ := time.Parse(lastModifiedFormat, remoteModified)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return rModTime, nil
+	return time.Parse(lastModifiedFormat, remoteModified)
 }
 
-func downloadOnline() (multiverse.OnlineMultiverse, error) {
-	var structure multiverse.OnlineMultiverse
-
-	resp, err := http.Get(remoteDBLocation)
-	defer resp.Body.Close()
+func downloadOnline() (structure multiverse.OnlineMultiverse, err error) {
+	resp, err := getOnline("GET")
 
 	if err != nil {
-		return structure, err
+		return
 	}
 
-	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(&structure.Sets)
-	structure.Modified, _ = onlineModifiedAt()
+	defer resp.Body.Close()
 
-	return structure, err
+	dec := json.NewDecoder(resp.Body)
+
+	if err = dec.Decode(&structure.Sets); err != nil {
+		return
+	}
+
+	remoteModified := resp.Header.Get("Last-Modified")
+	rModTime, err := time.Parse(lastModifiedFormat, remoteModified)
+	if err != nil {
+		return
+	}
+	structure.Modified = rModTime
+
+	return
+}
+
+func getOnline(method string) (*http.Response, error) {
+	var netClient http.Client
+
+	switch method {
+	case "HEAD":
+		return netClient.Head(remoteDBLocation)
+	case "GET":
+		return netClient.Get(remoteDBLocation)
+	default:
+		return nil, errors.New("unknown method")
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// The deck formats we know about. (Standard, Extended, Modern, etc.)
 var Formats = []struct {
 	Name string
 }{}

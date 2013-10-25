@@ -3,6 +3,7 @@ package multiverse
 import (
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/arbovm/levenshtein"
@@ -35,10 +36,36 @@ func generatePhoneticsMaps(cards []*Card) *trie.Trie {
 	return metaphoneMap
 }
 
+var seenRunes []rune
+
 func preventUnicode(name string) string {
+	clean := ""
 	for _, r := range name {
 		if r > 128 {
+			switch r {
+			case 'á', 'à', 'â':
+				clean += "a"
+			case 'é':
+				clean += "e"
+			case 'í':
+				clean += "i"
+			case 'ö':
+				clean += "o"
+			case 'û', 'ú':
+				clean += "u"
 
+			case 'Æ', 'æ':
+				clean += "ae"
+
+			case '®':
+				// We know this is an option but we're explicitly ignoring it.
+
+			default:
+			}
+		} else {
+			if unicode.IsLetter(r) {
+				clean += string(r)
+			}
 		}
 	}
 	return strings.ToLower(name)

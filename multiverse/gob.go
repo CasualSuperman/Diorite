@@ -10,7 +10,7 @@ import (
 )
 
 type skipListElem struct {
-	ID        multiverseID
+	ID        MultiverseID
 	CardIndex int32
 }
 
@@ -26,7 +26,7 @@ func (m Multiverse) Write(w io.Writer) error {
 	encCards := make([]skipListElem, m.Cards.Printings.Len())
 
 	for i, node := 0, m.Cards.Printings.Front(); node != nil; i, node = i+1, node.Next() {
-		encCards[i] = skipListElem{multiverseID(node.Key().(int)), int32(node.Value.(int))}
+		encCards[i] = skipListElem{MultiverseID(node.Key().(int)), int32(node.Value.(int))}
 	}
 
 	mEnc := gobMutiverse{
@@ -65,7 +65,7 @@ func Read(r io.Reader) (m Multiverse, err error) {
 	decCards := skiplist.New()
 
 	for _, elem := range mDec.Cards {
-		decCards.Insert(int32(elem.ID), int(elem.CardIndex))
+		decCards.Insert(int(elem.ID), int(elem.CardIndex))
 	}
 
 	decPronunciations := generatePhoneticsMaps(mDec.CardList)

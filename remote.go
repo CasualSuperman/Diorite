@@ -1,62 +1,42 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
-	"net/http"
+	"bufio"
+	"net"
 	"time"
 
-	"github.com/CasualSuperman/Diorite/multiverse"
+	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
-const remoteDBLocation = "http://mtgjson.com/json/AllSets-x.json"
+const remoteDBLocation = "localhost:5050"
 const lastModifiedFormat = time.RFC1123
 
 func onlineModifiedAt() (time.Time, error) {
-	resp, err := getOnline("HEAD")
+	conn, err := net.Dial("tcp", remoteDBLocation)
 
 	if err != nil {
 		return time.Time{}, err
 	}
-	remoteModified := resp.Header.Get("Last-Modified")
-	return time.Parse(lastModifiedFormat, remoteModified)
+
+	conn.Write([]byte("multiverseMod\n"))
+
+	s := bufio.NewScanner(conn)
+	s.Scan()
+	t := s.Text()
+	conn.Close()
+
+	return time.Parse(lastModifiedFormat, t)
 }
 
-func downloadMultiverse() (m multiverse.Multiverse, err error) {
-	var structure multiverse.OnlineMultiverse
-	resp, err := getOnline("GET")
+func downloadMultiverse() (mv m.Multiverse, err error) {
+	conn, err := net.Dial("tcp", remoteDBLocation)
 
 	if err != nil {
 		return
 	}
 
-	defer resp.Body.Close()
+	conn.Write([]byte("multiverseDL\n"))
+	defer conn.Close()
 
-	dec := json.NewDecoder(resp.Body)
-
-	if err = dec.Decode(&structure.Sets); err != nil {
-		return
-	}
-
-	remoteModified := resp.Header.Get("Last-Modified")
-	rModTime, err := time.Parse(lastModifiedFormat, remoteModified)
-	if err != nil {
-		return
-	}
-	structure.Modified = rModTime
-
-	return structure.Convert(), err
-}
-
-func getOnline(method string) (*http.Response, error) {
-	var netClient http.Client
-
-	switch method {
-	case "HEAD":
-		return netClient.Head(remoteDBLocation)
-	case "GET":
-		return netClient.Get(remoteDBLocation)
-	default:
-		return nil, errors.New("unknown method")
-	}
+	return m.Read(conn)
 }

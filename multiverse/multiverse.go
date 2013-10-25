@@ -19,36 +19,6 @@ type Multiverse struct {
 	Modified       time.Time
 }
 
-func getCardIndex(cardList []*Card, cardName string) int {
-	for i, card := range cardList {
-		if card.Name == cardName {
-			return i
-		}
-	}
-	return -1
-}
-
-// Convert to a Multiverse.
-func (om OnlineMultiverse) Convert() (m Multiverse) {
-	m.Sets = make(map[string]*Set)
-	m.Cards.Printings = skiplist.New()
-	m.Modified = om.Modified
-
-	for _, set := range om.Sets {
-		m.Sets[set.Name] = setFromJSON(set)
-		for _, card := range set.Cards {
-			index := getCardIndex(m.Cards.List, card.Name)
-			if index == -1 {
-				index = len(m.Cards.List)
-				c := new(Card)
-				copyCardFields(&card, c)
-				m.Cards.List = append(m.Cards.List, c)
-			}
-			m.Cards.Printings.Insert(card.MultiverseID, index)
-		}
-	}
-
+func (m Multiverse) Initialize() {
 	m.Pronunciations = generatePhoneticsMaps(m.Cards.List)
-
-	return
 }

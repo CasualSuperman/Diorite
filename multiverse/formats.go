@@ -13,7 +13,7 @@ type legalityCardCheck func(*Card) bool
 type legalitySetCheck func(*Set) bool
 
 func unSet(s *Set) bool {
-	return s.Type == SetType.Un
+	return s.Type == SetTypes.Un
 }
 
 func vintageSetLegal(s *Set) bool {

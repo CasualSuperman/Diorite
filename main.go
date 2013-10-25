@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"runtime"
@@ -19,7 +20,7 @@ func main() {
 	err := os.MkdirAll(StorageDir, os.ModePerm|os.ModeDir)
 
 	if err != nil {
-		fmt.Errorf("Unable to create application storage directory. Multiverse will not be saved.")
+		log.Println("Unable to create application storage directory. Multiverse will not be saved.")
 		canSaveMultiverse = false
 	}
 
@@ -30,10 +31,9 @@ func main() {
 
 		if err != nil {
 			if os.IsNotExist(err) {
-				fmt.Println("No local database available. A local copy will be downloaded.")
+				log.Println("No local database available. A local copy will be downloaded.")
 			} else {
-				fmt.Println(err)
-				os.Exit(1)
+				log.Fatalln(err)
 			}
 		} else {
 			fmt.Println("Loading local multiverse.")
@@ -41,37 +41,41 @@ func main() {
 			multiverseFile.Close()
 
 			if err != nil {
-				fmt.Errorf("Unable to load multiverse: %s", err)
+				log.Printf("Unable to load multiverse: %s\n", err)
 			} else {
-				fmt.Println("Multiverse loaded.")
+				log.Println("Multiverse loaded.")
 				multiverseLoaded = true
 			}
 		}
 
 	}
 
-	fmt.Println("Checking for multiverse updates.")
+	if multiverseLoaded {
+		log.Println("Checking for multiverse updates.")
+	} else {
+		log.Println("Downloading online multiverse.")
+	}
 	mostRecentUpdate, err := onlineModifiedAt()
 
 	if err != nil {
+		log.Println(err)
 		if multiverseLoaded == false {
-			fmt.Errorf("No local multiverse available, and unable to download copy. Unable to continue.")
-			os.Exit(1)
+			log.Fatalln("No local multiverse available, and unable to download copy. Unable to continue.")
 		}
-		fmt.Errorf("Warning: Online database unavailable. Your card index may be out of date.")
+		log.Println("Warning: Online database unavailable. Your card index may be out of date.")
 	}
 
 	var saved sync.WaitGroup
 
 	if mostRecentUpdate.After(m.Modified) {
-		fmt.Println("Multiverse update available! Downloading now.")
+		log.Println("Multiverse update available! Downloading now.")
 		newM, err := downloadMultiverse()
 		if err != nil {
+			log.Printf("Error downloading: %s\n", err)
 			if !multiverseLoaded {
-				fmt.Errorf("Downloading multiverse failed and no local database available. Unable to continue.")
-				os.Exit(1)
+				log.Fatalln("Downloading multiverse failed and no local database available. Unable to continue.")
 			}
-			fmt.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
+			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		} else {
 			m = newM
 		}
@@ -80,23 +84,23 @@ func main() {
 			file, err := os.Create(MultiverseFileName)
 
 			if err != nil {
-				fmt.Errorf("Unable to save update to multiverse. Continuing with up-to-date multiverse, but it will be redownloaded on next startup.")
-				fmt.Errorf("(Reason for failure: %s)", err)
+				log.Println("Unable to save update to multiverse. Continuing with up-to-date multiverse, but it will be redownloaded on next startup.")
+				log.Printf("(Reason for failure: %s)\n", err)
 			} else {
 				saved.Add(1)
 				go func() {
 					defer file.Close()
 					defer saved.Done()
-					fmt.Println("Saving downloaded multiverse.")
+					log.Println("Saving downloaded multiverse.")
 					err := m.Write(file)
 					if err != nil {
-						fmt.Println("Error saving multiverse:", err)
+						log.Println("Error saving multiverse:", err)
 					}
 				}()
 			}
 		}
 	} else {
-		fmt.Println("No updates available.")
+		log.Println("No updates available.")
 	}
 
 	cards := m.FuzzyNameSearch("aetherling", 15)

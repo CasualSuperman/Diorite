@@ -10,9 +10,11 @@ import (
 // Multiverse is an entire Magic: The Gathering multiverse.
 // It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
 type Multiverse struct {
-	Sets           map[string]*Set
-	Cards          *skiplist.T
-	cardList       []*Card
+	Sets  map[string]*Set
+	Cards struct {
+		Printings *skiplist.T
+		List      []*Card
+	}
 	Pronunciations *trie.Trie
 	Modified       time.Time
 }
@@ -29,24 +31,24 @@ func getCardIndex(cardList []*Card, cardName string) int {
 // Convert to a Multiverse.
 func (om OnlineMultiverse) Convert() (m Multiverse) {
 	m.Sets = make(map[string]*Set)
-	m.Cards = skiplist.New()
+	m.Cards.Printings = skiplist.New()
 	m.Modified = om.Modified
 
 	for _, set := range om.Sets {
 		m.Sets[set.Name] = setFromJSON(set)
 		for _, card := range set.Cards {
-			index := getCardIndex(m.cardList, card.Name)
+			index := getCardIndex(m.Cards.List, card.Name)
 			if index == -1 {
-				index = len(m.cardList)
+				index = len(m.Cards.List)
 				c := new(Card)
 				copyCardFields(&card, c)
-				m.cardList = append(m.cardList, c)
+				m.Cards.List = append(m.Cards.List, c)
 			}
-			m.Cards.Insert(card.MultiverseID, index)
+			m.Cards.Printings.Insert(card.MultiverseID, index)
 		}
 	}
 
-	m.Pronunciations = generatePhoneticsMaps(m.cardList)
+	m.Pronunciations = generatePhoneticsMaps(m.Cards.List)
 
 	return
 }

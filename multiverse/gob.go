@@ -23,16 +23,16 @@ type gobMutiverse struct {
 
 // Write the multiverse to the provided writer.
 func (m Multiverse) Write(w io.Writer) error {
-	encCards := make([]skipListElem, m.Cards.Len())
+	encCards := make([]skipListElem, m.Cards.Printings.Len())
 
-	for i, node := 0, m.Cards.Front(); node != nil; i, node = i+1, node.Next() {
+	for i, node := 0, m.Cards.Printings.Front(); node != nil; i, node = i+1, node.Next() {
 		encCards[i] = skipListElem{multiverseID(node.Key().(int)), int32(node.Value.(int))}
 	}
 
 	mEnc := gobMutiverse{
 		m.Sets,
 		encCards,
-		m.cardList,
+		m.Cards.List,
 		m.Modified,
 	}
 
@@ -70,10 +70,14 @@ func Read(r io.Reader) (m Multiverse, err error) {
 
 	decPronunciations := generatePhoneticsMaps(mDec.CardList)
 
+	var cards = struct {
+		Printings *skiplist.T
+		List      []*Card
+	}{decCards, mDec.CardList}
+
 	m = Multiverse{
 		mDec.Sets,
-		decCards,
-		mDec.CardList,
+		cards,
 		decPronunciations,
 		mDec.Modified,
 	}

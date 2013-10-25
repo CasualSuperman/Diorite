@@ -105,7 +105,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 						continue cardLoop
 					}
 				}
-				name := preventUnicode(m.cardList[cardIndex].Name)
+				name := preventUnicode(m.Cards.List[cardIndex].Name)
 				similarity := searchGrams2.Similarity(name)
 				similarity *= searchGrams3.Similarity(name)
 				similarity /= float32(levenshtein.Distance(searchPhrase, name))
@@ -136,7 +136,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	results := make([]*Card, count)
 
 	for i := range results {
-		results[i] = m.cardList[aggregator[i].index]
+		results[i] = m.Cards.List[aggregator[i].index]
 	}
 
 	return results

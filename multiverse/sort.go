@@ -23,7 +23,7 @@ func (r *resultsList) Less(i, j int) bool {
 	iDist := len(r.searchTerm) * len(r.searchTerm)
 	jDist := len(r.searchTerm) * len(r.searchTerm)
 
-	for _, word := range strings.Split(strings.ToLower(r.cards[i].Name), " ") {
+	for _, word := range strings.Split(preventUnicode(r.cards[i].Name), " ") {
 		maxI := len(r.searchTerm)
 		if maxI > len(word) {
 			maxI = len(word)
@@ -34,7 +34,7 @@ func (r *resultsList) Less(i, j int) bool {
 		}
 	}
 
-	for _, word := range strings.Split(strings.ToLower(r.cards[j].Name), " ") {
+	for _, word := range strings.Split(preventUnicode(r.cards[j].Name), " ") {
 		maxJ := len(r.searchTerm)
 		if maxJ > len(word) {
 			maxJ = len(word)

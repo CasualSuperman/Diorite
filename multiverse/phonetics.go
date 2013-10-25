@@ -90,7 +90,7 @@ func (f fuzzySearchList) Swap(i, j int) {
 
 func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	var aggregator fuzzySearchList
-	searchPhrase = strings.ToLower(searchPhrase)
+	searchPhrase = preventUnicode(searchPhrase)
 	searchGrams2 := newNGram(searchPhrase, 2)
 	searchGrams3 := newNGram(searchPhrase, 3)
 
@@ -104,7 +104,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 						continue cardLoop
 					}
 				}
-				name := strings.ToLower(m.cardList[cardIndex].Name)
+				name := preventUnicode(m.cardList[cardIndex].Name)
 				similarity := searchGrams2.Similarity(name)
 				similarity *= searchGrams3.Similarity(name)
 				similarity /= float32(levenshtein.Distance(searchPhrase, name))

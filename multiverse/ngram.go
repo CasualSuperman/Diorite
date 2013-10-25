@@ -9,8 +9,6 @@ type nGram struct {
 
 func newNGram(phrase string, size int) nGram {
 	var n = nGram{nil, size}
-	phrase = strings.ToLower(phrase)
-	phrase = preventUnicode(phrase)
 	words := strings.Split(phrase, " ")
 
 	for _, word := range words {

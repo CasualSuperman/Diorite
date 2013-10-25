@@ -79,7 +79,7 @@ func (m *Multiverse) SearchByName(name string) []*Card {
 	}
 
 	for crdName, crd := range processedCards.cards {
-		for _, word := range strings.Split(strings.ToLower(crdName), " ") {
+		for _, word := range strings.Split(preventUnicode(crdName), " ") {
 			maxLen := len(name)
 			if maxLen > len(word) {
 				maxLen = len(word)
@@ -97,7 +97,7 @@ func (m *Multiverse) SearchByName(name string) []*Card {
 		i++
 	}
 
-	toSort := resultsList{finalResults, strings.ToLower(name)}
+	toSort := resultsList{finalResults, preventUnicode(name)}
 	sort.Sort(&toSort)
 
 	return finalResults

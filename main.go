@@ -71,7 +71,7 @@ func main() {
 
 	if mostRecentUpdate.After(m.Modified) {
 		fmt.Println("Multiverse update available! Downloading now.")
-		om, err := downloadOnline()
+		m, err = downloadMultiverse()
 		if err != nil {
 			if !multiverseLoaded {
 				fmt.Println("Unable to download multiverse and no local database available. Unable to continue.")
@@ -79,8 +79,6 @@ func main() {
 			}
 			fmt.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		}
-		fmt.Println("Transforming multiverse.")
-		m = multiverse.Create(om.Sets, om.Modified)
 
 		file, err := os.Create(multiverseFileName)
 

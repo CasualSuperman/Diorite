@@ -26,14 +26,13 @@ func getCardIndex(cardList []*Card, cardName string) int {
 	return -1
 }
 
-// Create a Multiverse from the provided map of sets, with a modification time of the provided time.
-func Create(json map[string]jsonSet, modified time.Time) (m Multiverse) {
+// Convert to a Multiverse.
+func (om OnlineMultiverse) Convert() (m Multiverse) {
 	m.Sets = make(map[string]*Set)
 	m.Cards = skiplist.New()
-	m.cardList = make([]*Card, 0)
-	m.Modified = modified
+	m.Modified = om.Modified
 
-	for _, set := range json {
+	for _, set := range om.Sets {
 		m.Sets[set.Name] = setFromJSON(set)
 		for _, card := range set.Cards {
 			index := getCardIndex(m.cardList, card.Name)

@@ -13,6 +13,7 @@ type altTrie struct {
 	children  []altBranch
 }
 
+// Alt returns an alternate implementation of a Trie, which is slightly faster for searching. Useful for Tries that are created and then infrequently changed.
 func Alt() *altTrie {
 	return &altTrie{nil, false, nil}
 }

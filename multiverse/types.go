@@ -4,10 +4,19 @@ import (
 	"time"
 )
 
+// ManaColor is a bitmask of possible Mana Colors.
 type ManaColor byte
+
+// BorderColor indicates the color of card borders within a Set.
 type BorderColor byte
+
+// Rarity of a card for a specific printing.
 type Rarity byte
+
+// MultiverseID is a unique ID for a single printing of a card.
 type MultiverseID int32
+
+// SetType indicates the various set types.
 type SetType byte
 
 // The colors of mana that exist in the Multiverse.
@@ -66,6 +75,7 @@ type Card struct {
 	Rulings []Ruling
 }
 
+// Ruling is a ruling made by a judge that can clarify difficult situations that may arise.
 type Ruling struct {
 	Date time.Time
 	Text string

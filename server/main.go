@@ -11,7 +11,7 @@ import (
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
-var port *string = flag.String("port", ":5050", "The port to run the server on.")
+var port = flag.String("port", ":5050", "The port to run the server on.")
 var multiverse m.Multiverse
 var multiverseDL []byte
 

@@ -58,6 +58,8 @@ func Read(r io.Reader) (m Multiverse, err error) {
 
 	err = dec.Decode(&mDec)
 
+	lr.Close()
+
 	if err != nil {
 		return
 	}

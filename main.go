@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"os"
@@ -29,7 +30,7 @@ func main() {
 		multiverseFile, err := os.Open(MultiverseFileName)
 
 		if err != nil {
-			if os.IsNotExist(err) {
+			if os.IsNotExist(err) || os.IsPermission(err) {
 				log.Println("No local database available. A local copy will be downloaded.")
 			} else {
 				log.Fatalln(err)
@@ -65,12 +66,12 @@ func main() {
 	}
 
 	if mostRecentUpdate.After(m.Modified) {
-		var saveTo *os.File
+		var saveTo io.Writer
 		if canSaveMultiverse {
 			saveTo, err = os.Create(MultiverseFileName)
 			if err != nil {
 				log.Println("Unable to save update to multiverse. Continuing, but it will be redownloaded on next startup.")
-				log.Printf("(Reason for failure: %s)\n", err)
+				saveTo = nil
 			}
 		}
 		log.Println("Multiverse update available! Downloading now.")

@@ -43,7 +43,7 @@ func downloadMultiverse(saveTo io.Writer) (mv m.Multiverse, err error) {
 	netConn.Write([]byte("multiverseDL\n"))
 
 	if saveTo != nil {
-		conn = io.TeeReader(conn, saveTo)
+		conn = io.TeeReader(netConn, saveTo)
 	}
 
 	return m.Read(conn)

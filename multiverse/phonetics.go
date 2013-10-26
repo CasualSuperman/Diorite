@@ -106,8 +106,18 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					}
 				}
 				name := preventUnicode(m.Cards.List[cardIndex].Name)
+
+				bestMatch := 0
+				for _, word := range strings.Split(name, " ") {
+					match := phonetics.DifferenceSoundex(word, searchTerm)
+					if match > bestMatch {
+						bestMatch = match
+					}
+				}
+
 				similarity := searchGrams2.Similarity(name)
 				similarity *= searchGrams3.Similarity(name)
+				similarity *= float32(bestMatch) / 10.0
 				similarity /= float32(levenshtein.Distance(searchPhrase, name))
 				similarity *= float32(len(name))
 
@@ -124,6 +134,37 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 				}
 
 				aggregator = append(aggregator, app)
+			}
+		}
+	levenshteinLoop:
+		for cardIndex, card := range m.Cards.List {
+			for _, word := range strings.Split(preventUnicode(card.Name), " ") {
+				if levenshtein.Distance(word, searchTerm) <= len(searchTerm)/3 {
+
+					name := preventUnicode(card.Name)
+					similarity := searchGrams2.Similarity(name)
+					similarity *= searchGrams3.Similarity(name)
+					similarity *= float32(phonetics.DifferenceSoundex(word, searchTerm)) / 100.0
+					similarity /= float32(levenshtein.Distance(searchPhrase, name))
+					similarity *= float32(len(name))
+					var app = struct {
+						index      int
+						similarity float32
+					}{
+						cardIndex,
+						similarity,
+					}
+
+					for i, ci := range aggregator {
+						if cardIndex == ci.index {
+							if ci.similarity < similarity {
+								aggregator[i] = app
+							}
+							continue levenshteinLoop
+						}
+					}
+					aggregator = append(aggregator, app)
+				}
 			}
 		}
 	}

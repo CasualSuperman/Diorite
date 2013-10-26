@@ -2,13 +2,14 @@ package main
 
 import (
 	"bufio"
+	"io"
 	"net"
 	"time"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
-const remoteDBLocation = "localhost:5050"
+const remoteDBLocation = "diorite.casualsuperman.com:5050"
 const lastModifiedFormat = time.RFC1123
 
 func onlineModifiedAt() (time.Time, error) {
@@ -28,15 +29,22 @@ func onlineModifiedAt() (time.Time, error) {
 	return time.Parse(lastModifiedFormat, t)
 }
 
-func downloadMultiverse() (mv m.Multiverse, err error) {
-	conn, err := net.Dial("tcp", remoteDBLocation)
+func downloadMultiverse(saveTo io.Writer) (mv m.Multiverse, err error) {
+	var conn io.Reader
+	netConn, err := net.Dial("tcp", remoteDBLocation)
+	conn = netConn
 
 	if err != nil {
 		return
 	}
 
-	conn.Write([]byte("multiverseDL\n"))
-	defer conn.Close()
+	defer netConn.Close()
+
+	netConn.Write([]byte("multiverseDL\n"))
+
+	if saveTo != nil {
+		conn = io.TeeReader(conn, saveTo)
+	}
 
 	return m.Read(conn)
 }

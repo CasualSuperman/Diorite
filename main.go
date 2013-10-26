@@ -6,7 +6,6 @@ import (
 	"math"
 	"os"
 	"runtime"
-	"sync"
 
 	"github.com/CasualSuperman/Diorite/multiverse"
 )
@@ -36,7 +35,7 @@ func main() {
 				log.Fatalln(err)
 			}
 		} else {
-			fmt.Println("Loading local multiverse.")
+			log.Println("Loading local multiverse.")
 			m, err = multiverse.Read(multiverseFile)
 			multiverseFile.Close()
 
@@ -65,11 +64,17 @@ func main() {
 		log.Println("Warning: Online database unavailable. Your card index may be out of date.")
 	}
 
-	var saved sync.WaitGroup
-
 	if mostRecentUpdate.After(m.Modified) {
+		var saveTo *os.File
+		if canSaveMultiverse {
+			saveTo, err = os.Create(MultiverseFileName)
+			if err != nil {
+				log.Println("Unable to save update to multiverse. Continuing, but it will be redownloaded on next startup.")
+				log.Printf("(Reason for failure: %s)\n", err)
+			}
+		}
 		log.Println("Multiverse update available! Downloading now.")
-		newM, err := downloadMultiverse()
+		newM, err := downloadMultiverse(saveTo)
 		if err != nil {
 			log.Printf("Error downloading: %s\n", err)
 			if !multiverseLoaded {
@@ -78,26 +83,6 @@ func main() {
 			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		} else {
 			m = newM
-		}
-
-		if canSaveMultiverse {
-			file, err := os.Create(MultiverseFileName)
-
-			if err != nil {
-				log.Println("Unable to save update to multiverse. Continuing with up-to-date multiverse, but it will be redownloaded on next startup.")
-				log.Printf("(Reason for failure: %s)\n", err)
-			} else {
-				saved.Add(1)
-				go func() {
-					defer file.Close()
-					defer saved.Done()
-					log.Println("Saving downloaded multiverse.")
-					err := m.Write(file)
-					if err != nil {
-						log.Println("Error saving multiverse:", err)
-					}
-				}()
-			}
 		}
 	} else {
 		log.Println("No updates available.")
@@ -119,6 +104,4 @@ func main() {
 		}
 	}
 	fmt.Println(names)
-
-	saved.Wait()
 }

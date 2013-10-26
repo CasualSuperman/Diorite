@@ -22,7 +22,7 @@ func onlineModifiedAt() (time.Time, error) {
 	return time.Parse(lastModifiedFormat, remoteModified)
 }
 
-func downloadMultiverse() (mv m.Multiverse, err error) {
+func downloadMultiverse() (mv *m.Multiverse, err error) {
 	var structure onlineMultiverse
 	resp, err := getOnline("GET")
 
@@ -45,7 +45,9 @@ func downloadMultiverse() (mv m.Multiverse, err error) {
 	}
 	structure.Modified = rModTime
 
-	return structure.Convert(), err
+	multiverse := structure.Convert()
+
+	return &multiverse, err
 }
 
 func getOnline(method string) (*http.Response, error) {

@@ -25,6 +25,7 @@ func main() {
 	}
 
 	getDlData(multiverse)
+	multiverse = nil
 
 	log.Println("Multiverse downloaded.")
 
@@ -76,7 +77,7 @@ func updateMultiverse() {
 	}
 }
 
-func getDlData(multiverse m.Multiverse) {
+func getDlData(multiverse *m.Multiverse) {
 	var b bytes.Buffer
 	multiverse.Write(&b)
 	multiverseDL = b.Bytes()

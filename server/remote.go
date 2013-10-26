@@ -1,12 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
-
-	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
 const remoteDBLocation = "http://mtgjson.com/json/AllSets-x.json"
@@ -22,12 +21,12 @@ func onlineModifiedAt() (time.Time, error) {
 	return time.Parse(lastModifiedFormat, remoteModified)
 }
 
-func downloadMultiverse() (mv *m.Multiverse, err error) {
+func getMultiverseData() ([]byte, time.Time, error) {
 	var structure onlineMultiverse
 	resp, err := getOnline("GET")
 
 	if err != nil {
-		return
+		return nil, time.Time{}, err
 	}
 
 	defer resp.Body.Close()
@@ -35,19 +34,24 @@ func downloadMultiverse() (mv *m.Multiverse, err error) {
 	dec := json.NewDecoder(resp.Body)
 
 	if err = dec.Decode(&structure.Sets); err != nil {
-		return
+		return nil, time.Time{}, err
 	}
 
 	remoteModified := resp.Header.Get("Last-Modified")
 	rModTime, err := time.Parse(lastModifiedFormat, remoteModified)
 	if err != nil {
-		return
+		return nil, time.Time{}, err
 	}
 	structure.Modified = rModTime
 
 	multiverse := structure.Convert()
 
-	return &multiverse, err
+	var b bytes.Buffer
+	multiverse.Write(&b)
+	multiverseDL := b.Bytes()
+	multiverseMod := multiverse.Modified
+
+	return multiverseDL, multiverseMod, err
 }
 
 func getOnline(method string) (*http.Response, error) {

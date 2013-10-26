@@ -2,30 +2,26 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"flag"
 	"log"
 	"net"
 	"time"
-
-	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
 var port = flag.String("port", ":5050", "The port to run the server on.")
-var multiverseModified time.Time
+
 var multiverseDL []byte
+var multiverseModified time.Time
 
 func main() {
+	var err error
 	log.Println("Downloading multiverse.")
 
-	multiverse, err := downloadMultiverse()
+	multiverseDL, multiverseModified, err = getMultiverseData()
 
 	if err != nil {
 		log.Fatalln("Unable to download multiverse.")
 	}
-
-	getDlData(multiverse)
-	multiverse = nil
 
 	log.Println("Multiverse downloaded.")
 
@@ -64,7 +60,8 @@ func updateMultiverse() {
 		}
 
 		log.Println("Update found! Downloading...")
-		newM, err := downloadMultiverse()
+
+		newData, newMod, err := getMultiverseData()
 
 		if err != nil {
 			continue
@@ -72,15 +69,8 @@ func updateMultiverse() {
 
 		log.Println("Update applied.")
 
-		getDlData(newM)
-		multiverseModified = newM.Modified
+		multiverseDL, multiverseModified = newData, newMod
 	}
-}
-
-func getDlData(multiverse *m.Multiverse) {
-	var b bytes.Buffer
-	multiverse.Write(&b)
-	multiverseDL = b.Bytes()
 }
 
 func provideDownload(conn net.Conn) {

@@ -104,9 +104,9 @@ func (t *altTrie) Search(key string) []string {
 func (t *altTrie) search(key []rune) []string {
 	if len(key) == 0 {
 		var options []string
-		for r, child := range t.children {
+		for _, child := range t.children {
 			for _, option := range child.branch.search(key) {
-				options = append(options, string(r)+option)
+				options = append(options, string(child.letter)+option)
 			}
 		}
 		if t.validLeaf {

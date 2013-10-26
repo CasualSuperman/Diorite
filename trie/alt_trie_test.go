@@ -68,6 +68,22 @@ func TestAltSearch(t *testing.T) {
 	if x := trie.Search("sand"); len(x) != 2 {
 		t.Fail()
 	}
+	results := trie.Search("sand")
+
+	hasSand := false
+	hasSandPaper := false
+
+	for _, result := range results {
+		if result == "sand" {
+			hasSand = true
+		} else if result == "sandpaper" {
+			hasSandPaper = true
+		}
+	}
+
+	if !hasSandPaper || !hasSand {
+		t.Fail()
+	}
 }
 
 func TestAltRemove(t *testing.T) {

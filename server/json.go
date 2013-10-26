@@ -90,7 +90,5 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 		}
 	}
 
-	mv.Initialize()
-
 	return
 }

@@ -12,21 +12,19 @@ import (
 )
 
 var port = flag.String("port", ":5050", "The port to run the server on.")
-var multiverse m.Multiverse
+var multiverseModified time.Time
 var multiverseDL []byte
 
 func main() {
-	var err error
-
 	log.Println("Downloading multiverse.")
 
-	multiverse, err = downloadMultiverse()
+	multiverse, err := downloadMultiverse()
 
 	if err != nil {
 		log.Fatalln("Unable to download multiverse.")
 	}
 
-	getDlData()
+	getDlData(multiverse)
 
 	log.Println("Multiverse downloaded.")
 
@@ -55,7 +53,7 @@ func updateMultiverse() {
 		log.Println("Checking for update.")
 		mod, err := onlineModifiedAt()
 
-		if mod == multiverse.Modified {
+		if mod == multiverseModified {
 			log.Println("Multiverse up-to-date.")
 			continue
 		}
@@ -73,13 +71,12 @@ func updateMultiverse() {
 
 		log.Println("Update applied.")
 
-		multiverse = newM
-
-		getDlData()
+		getDlData(newM)
+		multiverseModified = newM.Modified
 	}
 }
 
-func getDlData() {
+func getDlData(multiverse m.Multiverse) {
 	var b bytes.Buffer
 	multiverse.Write(&b)
 	multiverseDL = b.Bytes()
@@ -92,7 +89,7 @@ func provideDownload(conn net.Conn) {
 	switch text := s.Text(); text {
 	case "multiverseMod":
 		log.Println("Timestamp accessed.")
-		conn.Write([]byte(multiverse.Modified.Format(lastModifiedFormat) + "\n"))
+		conn.Write([]byte(multiverseModified.Format(lastModifiedFormat) + "\n"))
 		conn.Close()
 	case "multiverseDL":
 		log.Println("Multiverse downloaded.")

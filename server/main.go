@@ -78,14 +78,19 @@ func provideDownload(conn net.Conn) {
 	s.Scan()
 
 	switch text := s.Text(); text {
+
+	// We want to know the modification time of the multiverse.
 	case "multiverseMod":
 		log.Println("Timestamp accessed.")
 		conn.Write([]byte(multiverseModified.Format(lastModifiedFormat) + "\n"))
 		conn.Close()
+
+	// We want to download the multiverse.
 	case "multiverseDL":
 		log.Println("Multiverse downloaded.")
 		conn.Write(multiverseDL)
 		conn.Close()
+
 	default:
 		log.Printf("Unrecognized request '%s'.\n", text)
 	}

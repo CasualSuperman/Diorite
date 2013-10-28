@@ -50,8 +50,13 @@ func getMetaphone(s string) string {
 var unicodeCache = make(map[string]string)
 
 func preventUnicode(name string) string {
+	if cached, ok := unicodeCache[name]; ok {
+		return cached
+	}
+	oldName := name
 	name = strings.ToLower(name)
 	if cached, ok := unicodeCache[name]; ok {
+		unicodeCache[oldName] = cached
 		return cached
 	}
 
@@ -85,6 +90,7 @@ func preventUnicode(name string) string {
 		}
 	}
 
+	unicodeCache[oldName] = clean
 	unicodeCache[name] = clean
 
 	return clean

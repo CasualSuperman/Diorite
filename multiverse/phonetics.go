@@ -5,7 +5,7 @@ import (
 	"unicode"
 
 	"github.com/CasualSuperman/Diorite/trie"
-	"github.com/arbovm/levenshtein"
+	"github.com/CasualSuperman/levenshtein"
 	"github.com/dotCypress/phonetics"
 )
 
@@ -35,9 +35,26 @@ func generatePhoneticsMaps(cards []*Card) trie.Trie {
 	return metaphoneMap
 }
 
-var seenRunes []rune
+var phoneticsCache = make(map[string]string)
+
+func getMetaphone(s string) string {
+	if cached, ok := phoneticsCache[s]; ok {
+		return cached
+	}
+
+	m := phonetics.EncodeMetaphone(s)
+	phoneticsCache[s] = m
+	return m
+}
+
+var unicodeCache = make(map[string]string)
 
 func preventUnicode(name string) string {
+	name = strings.ToLower(name)
+	if cached, ok := unicodeCache[name]; ok {
+		return cached
+	}
+
 	clean := ""
 	for _, r := range name {
 		if r > 128 {
@@ -67,7 +84,10 @@ func preventUnicode(name string) string {
 			}
 		}
 	}
-	return strings.ToLower(name)
+
+	unicodeCache[name] = clean
+
+	return clean
 }
 
 type fuzzySearchList []struct {
@@ -83,7 +103,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	searchGrams3 := newNGram(searchPhrase, 3)
 
 	for _, searchTerm := range strings.Split(searchPhrase, " ") {
-		for _, candidate := range m.Pronunciations.Search(phonetics.EncodeMetaphone(searchTerm)) {
+		for _, candidate := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
 			cardIndices, _ := m.Pronunciations.Get(candidate)
 		cardLoop:
 			for _, cardIndex := range cardIndices.([]int) {
@@ -104,7 +124,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 
 				similarity := searchGrams2.Similarity(name)
 				similarity *= searchGrams3.Similarity(name)
-				similarity *= float32(bestMatch) / 10.0
+				similarity *= float32(bestMatch)
 				similarity /= float32(levenshtein.Distance(searchPhrase, name))
 				similarity *= float32(len(name))
 
@@ -146,7 +166,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					name := preventUnicode(card.Name)
 					similarity := searchGrams2.Similarity(name)
 					similarity *= searchGrams3.Similarity(name)
-					similarity *= float32(phonetics.DifferenceSoundex(word, searchTerm)) / 100.0
+					similarity *= float32(phonetics.DifferenceSoundex(word, searchTerm)) / 10.0
 					similarity /= float32(levenshtein.Distance(searchPhrase, name))
 					similarity *= float32(len(name))
 					var app = struct {

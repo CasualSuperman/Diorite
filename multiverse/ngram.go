@@ -12,8 +12,8 @@ func newNGram(phrase string, size int) nGram {
 	words := strings.Split(phrase, " ")
 
 	for _, word := range words {
-		for i := size - 1; i < len(word); i++ {
-			n.grams = append(n.grams, word[i-size+1:i+1])
+		for i := size; i <= len(word); i++ {
+			n.grams = append(n.grams, word[i-size:i])
 		}
 	}
 	return n

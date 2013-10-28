@@ -6,7 +6,7 @@ import (
 
 	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/CasualSuperman/levenshtein"
-	"github.com/dotCypress/phonetics"
+	"github.com/CasualSuperman/phonetics"
 )
 
 func generatePhoneticsMaps(cards []*Card) trie.Trie {

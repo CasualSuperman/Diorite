@@ -141,9 +141,9 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 				}
 
 				if len(aggregator) < cap(aggregator) {
-					i := len(aggregator) + 1
-					aggregator = aggregator[:i]
-					aggregator[i-1] = app
+					i := len(aggregator)
+					aggregator = aggregator[:i+1]
+					aggregator[i] = app
 				} else {
 					for i := count - 1; i >= 0; i-- {
 						if aggregator[i].similarity < app.similarity {
@@ -187,9 +187,9 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					}
 
 					if len(aggregator) < cap(aggregator) {
-						i := len(aggregator) + 1
-						aggregator = aggregator[:i]
-						aggregator[i-1] = app
+						i := len(aggregator)
+						aggregator = aggregator[:i+1]
+						aggregator[i] = app
 					} else {
 						for i := count - 1; i >= 0; i-- {
 							if aggregator[i].similarity < app.similarity {

@@ -21,11 +21,10 @@ func newNGram(phrase string, size int) nGram {
 
 func (n nGram) Similarity(phrase string) float32 {
 	result := float32(0)
-	m := newNGram(phrase, n.size)
 
-	for _, myGram := range n.grams {
-		for _, oGram := range m.grams {
-			if myGram == oGram {
+	for i := 0; i < len(phrase)-n.size; i++ {
+		for _, myGram := range n.grams {
+			if phrase[i:i+n.size] == myGram {
 				result += float32(n.size)
 			}
 		}

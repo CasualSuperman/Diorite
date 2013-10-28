@@ -62,7 +62,7 @@ func preventUnicode(name string) string {
 			default:
 			}
 		} else {
-			if unicode.IsLetter(r) {
+			if r == ' ' || unicode.IsLetter(r) {
 				clean += string(r)
 			}
 		}

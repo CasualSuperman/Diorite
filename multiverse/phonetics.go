@@ -1,7 +1,6 @@
 package multiverse
 
 import (
-	//	"sort"
 	"strings"
 	"unicode"
 
@@ -74,18 +73,6 @@ func preventUnicode(name string) string {
 type fuzzySearchList []struct {
 	index      int
 	similarity float32
-}
-
-func (f fuzzySearchList) Len() int {
-	return len(f)
-}
-
-func (f fuzzySearchList) Less(i, j int) bool {
-	return f[i].similarity < f[j].similarity
-}
-
-func (f fuzzySearchList) Swap(i, j int) {
-	f[i], f[j] = f[j], f[i]
 }
 
 // FuzzyNameSearch searches for a card with a similar name to the searchPhrase, and returns count or less of the most likely results.

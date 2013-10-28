@@ -124,9 +124,8 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 
 				similarity := searchGrams2.Similarity(name)
 				similarity *= searchGrams3.Similarity(name)
-				similarity *= float32(bestMatch)
+				similarity *= float32(len(name) * bestMatch)
 				similarity /= float32(levenshtein.Distance(searchPhrase, name))
-				similarity *= float32(len(name))
 
 				if strings.Contains(name, searchPhrase) {
 					similarity *= 10
@@ -166,9 +165,8 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					name := preventUnicode(card.Name)
 					similarity := searchGrams2.Similarity(name)
 					similarity *= searchGrams3.Similarity(name)
-					similarity *= float32(phonetics.DifferenceSoundex(word, searchTerm)) / 10.0
+					similarity *= float32(len(name) * phonetics.DifferenceSoundex(word, searchTerm)) / 10.0
 					similarity /= float32(levenshtein.Distance(searchPhrase, name))
-					similarity *= float32(len(name))
 					var app = struct {
 						index      int
 						similarity float32

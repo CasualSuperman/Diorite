@@ -1,7 +1,7 @@
 package multiverse
 
 import (
-	"sort"
+	//	"sort"
 	"strings"
 	"unicode"
 
@@ -81,7 +81,7 @@ func (f fuzzySearchList) Len() int {
 }
 
 func (f fuzzySearchList) Less(i, j int) bool {
-	return f[i].similarity > f[j].similarity
+	return f[i].similarity < f[j].similarity
 }
 
 func (f fuzzySearchList) Swap(i, j int) {
@@ -90,7 +90,7 @@ func (f fuzzySearchList) Swap(i, j int) {
 
 // FuzzyNameSearch searches for a card with a similar name to the searchPhrase, and returns count or less of the most likely results.
 func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
-	var aggregator fuzzySearchList
+	var aggregator = make(fuzzySearchList, 0, count)
 	searchPhrase = preventUnicode(searchPhrase)
 	searchGrams2 := newNGram(searchPhrase, 2)
 	searchGrams3 := newNGram(searchPhrase, 3)
@@ -133,7 +133,22 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					similarity,
 				}
 
-				aggregator = append(aggregator, app)
+				if len(aggregator) < cap(aggregator) {
+					i := len(aggregator) + 1
+					aggregator = aggregator[:i]
+					aggregator[i-1] = app
+				} else {
+					for i := count - 1; i >= 0; i-- {
+						if aggregator[i].similarity < app.similarity {
+							if i < count-1 {
+								aggregator[i+1] = aggregator[i]
+							}
+							aggregator[i] = app
+						} else {
+							i = 0
+						}
+					}
+				}
 			}
 		}
 	levenshteinLoop:
@@ -163,21 +178,36 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 							continue levenshteinLoop
 						}
 					}
-					aggregator = append(aggregator, app)
+
+					if len(aggregator) < cap(aggregator) {
+						i := len(aggregator) + 1
+						aggregator = aggregator[:i]
+						aggregator[i-1] = app
+					} else {
+						for i := count - 1; i >= 0; i-- {
+							if aggregator[i].similarity < app.similarity {
+								if i < count-1 {
+									aggregator[i+1] = aggregator[i]
+								}
+								aggregator[i] = app
+							} else {
+								i = 0
+							}
+						}
+					}
 				}
 			}
 		}
 	}
 
-	sort.Sort(aggregator)
 	if len(aggregator) < count {
 		count = len(aggregator)
 	}
 
 	results := make([]*Card, count)
 
-	for i := range results {
-		results[i] = m.Cards.List[aggregator[i].index]
+	for i, card := range aggregator {
+		results[i] = m.Cards.List[card.index]
 	}
 
 	return results

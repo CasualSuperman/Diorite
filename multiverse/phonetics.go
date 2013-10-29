@@ -6,7 +6,7 @@ import (
 	"unicode"
 
 	"github.com/CasualSuperman/Diorite/trie"
-	"github.com/CasualSuperman/levenshtein"
+	"github.com/CasualSuperman/sift3"
 	"github.com/CasualSuperman/phonetics"
 )
 
@@ -143,7 +143,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 				similarity := searchGrams2.Similarity(name)
 				similarity *= searchGrams3.Similarity(name)
 				similarity *= float32(len(name) * bestMatch)
-				similarity /= float32(levenshtein.Distance(searchPhrase, name))
+				similarity /= float32(sift3.Sift(searchPhrase, name))
 
 				if strings.Contains(name, searchPhrase) {
 					similarity *= 10
@@ -186,13 +186,13 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	levenshteinLoop:
 		for cardIndex, card := range m.Cards.List {
 			for _, word := range strings.Split(preventUnicode(card.Name), " ") {
-				if levenshtein.Distance(word, searchTerm) <= len(searchTerm)/3 {
+				if sift3.Sift(word, searchTerm) <= len(searchTerm)/3 {
 
 					name := preventUnicode(card.Name)
 					similarity := searchGrams2.Similarity(name)
 					similarity *= searchGrams3.Similarity(name)
 					similarity *= float32(len(name) * phonetics.DifferenceSoundex(word, searchTerm)) / 10.0
-					similarity /= float32(levenshtein.Distance(searchPhrase, name))
+					similarity /= float32(sift3.Sift(searchPhrase, name))
 					var app = struct {
 						index      int
 						similarity float32

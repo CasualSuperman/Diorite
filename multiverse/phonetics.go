@@ -2,6 +2,7 @@ package multiverse
 
 import (
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/CasualSuperman/Diorite/trie"
@@ -35,25 +36,44 @@ func generatePhoneticsMaps(cards []*Card) trie.Trie {
 	return metaphoneMap
 }
 
+var phoneticsLock sync.RWMutex
 var phoneticsCache = make(map[string]string)
 
 func getMetaphone(s string) string {
+	phoneticsLock.RLock()
 	if cached, ok := phoneticsCache[s]; ok {
+		phoneticsLock.RUnlock()
 		return cached
 	}
+	phoneticsLock.RUnlock()
 
 	m := phonetics.EncodeMetaphone(s)
+	phoneticsLock.Lock()
 	phoneticsCache[s] = m
+	phoneticsLock.Unlock()
 	return m
 }
 
+var unicodeLock sync.RWMutex
 var unicodeCache = make(map[string]string)
 
 func preventUnicode(name string) string {
-	name = strings.ToLower(name)
+	unicodeLock.RLock()
 	if cached, ok := unicodeCache[name]; ok {
+		unicodeLock.RUnlock()
 		return cached
 	}
+	oldName := name
+	name = strings.ToLower(name)
+	if cached, ok := unicodeCache[name]; ok {
+		unicodeLock.RUnlock()
+		unicodeLock.Lock()
+		unicodeCache[oldName] = cached
+		unicodeLock.Unlock()
+		return cached
+	}
+
+	unicodeLock.RUnlock()
 
 	clean := ""
 	for _, r := range name {
@@ -85,7 +105,10 @@ func preventUnicode(name string) string {
 		}
 	}
 
+	unicodeLock.Lock()
+	unicodeCache[oldName] = clean
 	unicodeCache[name] = clean
+	unicodeLock.Unlock()
 
 	return clean
 }

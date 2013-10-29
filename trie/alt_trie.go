@@ -94,7 +94,7 @@ func (t *altTrie) get(key []rune) (interface{}, bool) {
 // Search the Trie for all keys starting with the key.
 // A full listing of the Trie is possible using t.Search("")
 func (t *altTrie) Search(key string) (r []interface{}) {
-	r = make([]interface{}, 0, 32)
+	r = make([]interface{}, 0, 64)
 	t.search([]rune(key), &r)
 	return
 }

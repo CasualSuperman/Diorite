@@ -1,6 +1,7 @@
 package multiverse
 
 func Split(input string) []string {
+	var s []string
 	start := 0
 	end := 0
 	l := len(input)
@@ -12,7 +13,11 @@ func Split(input string) []string {
 		}
 	}
 
-	s := make([]string, size)
+	if size == 1 {
+		return []string{input}
+	} else {
+		s = make([]string, size)
+	}
 
 	for i := 0; i < size; i++ {
 		for end < l && input[end] != ' ' {

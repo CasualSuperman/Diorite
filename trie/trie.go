@@ -6,7 +6,7 @@ import "errors"
 type Trie interface {
 	Add(string, interface{}) error
 	Get(string) (interface{}, bool)
-	Search(string) []string
+	Search(string) []interface{}
 	Remove(string) error
 }
 
@@ -88,31 +88,29 @@ func (t mapTrie) get(key []rune) (interface{}, bool) {
 
 // Search the Trie for all keys starting with the key.
 // A full listing of the Trie is possible using t.Search("")
-func (t *mapTrie) Search(key string) []string {
+func (t *mapTrie) Search(key string) []interface{} {
 	results := t.search([]rune(key))
-	for i, result := range results {
-		results[i] = key + result
+	if results == nil {
+		results = make([]interface{}, 0)
 	}
 	return results
 }
 
-func (t mapTrie) search(key []rune) []string {
+func (t mapTrie) search(key []rune) []interface{} {
 	if len(key) == 0 {
-		var options []string
-		for r, child := range t.children {
-			for _, option := range child.search(key) {
-				options = append(options, string(r)+option)
-			}
+		var options []interface{}
+		for _, child := range t.children {
+			options = append(options, child.search(key)...)
 		}
 		if t.validLeaf {
-			options = append(options, "")
+			options = append(options, t.value)
 		}
 		return options
 	}
 	if child, ok := t.children[key[0]]; ok {
 		return child.search(key[1:])
 	}
-	return make([]string, 0)
+	return nil
 }
 
 // Remove the key from the Trie.

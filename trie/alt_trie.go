@@ -93,31 +93,39 @@ func (t *altTrie) get(key []rune) (interface{}, bool) {
 
 // Search the Trie for all keys starting with the key.
 // A full listing of the Trie is possible using t.Search("")
-func (t *altTrie) Search(key string) []string {
-	results := t.search([]rune(key))
-	for i, result := range results {
-		results[i] = key + result
-	}
-	return results
+func (t *altTrie) Search(key string) (r []interface{}) {
+	r = make([]interface{}, 0, 32)
+	t.search([]rune(key), &r)
+	return
 }
 
-func (t *altTrie) search(key []rune) []string {
+func (t *altTrie) search(key []rune, results *[]interface{}) {
+iterate:
 	if len(key) == 0 {
-		var options []string
 		for _, child := range t.children {
-			for _, option := range child.branch.search(key) {
-				options = append(options, string(child.letter)+option)
-			}
+			child.branch.search(key, results)
 		}
 		if t.validLeaf {
-			options = append(options, "")
+			l := len(*results)
+
+			if l < cap(*results) {
+				*results = (*results)[:l+1]
+				(*results)[l] = t.value
+			} else {
+				oldR := *results
+				*results = make([]interface{}, l+1, l*2)
+				copy(*results, oldR)
+				(*results)[l] = t.value
+			}
 		}
-		return options
+		return
 	}
 	if i := t.getChild(key[0]); i != -1 {
-		return t.children[i].branch.search(key[1:])
+		t = t.children[i].branch
+		key = key[1:]
+		goto iterate
 	}
-	return make([]string, 0)
+	return
 }
 
 // Remove the key from the Trie.

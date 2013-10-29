@@ -60,8 +60,8 @@ func TestAltSubstringAdd(t *testing.T) {
 func TestAltSearch(t *testing.T) {
 	trie := Alt()
 	trie.Add("sand", 1)
-	trie.Add("sandpaper", 1)
-	trie.Add("sanity", 2)
+	trie.Add("sandpaper", 2)
+	trie.Add("sanity", 3)
 	if x := trie.Search("san"); len(x) != 3 {
 		t.Fail()
 	}
@@ -74,9 +74,9 @@ func TestAltSearch(t *testing.T) {
 	hasSandPaper := false
 
 	for _, result := range results {
-		if result == "sand" {
+		if result == 1 {
 			hasSand = true
-		} else if result == "sandpaper" {
+		} else if result == 2 {
 			hasSandPaper = true
 		}
 	}

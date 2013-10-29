@@ -47,3 +47,12 @@ func BenchmarkSingleLetterFuzzyNameSearch(b *testing.B) {
 		m.FuzzyNameSearch("d", 15)
 	}
 }
+
+func BenchmarkFullNameFuzzyNameSearch(b *testing.B) {
+	m := openTestingMultiverse()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		m.FuzzyNameSearch("Might of Old Krosa", 15)
+	}
+}

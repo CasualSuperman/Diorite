@@ -26,7 +26,7 @@ func newNGram(phrase string, size int) nGram {
 	return n
 }
 
-func (n nGram) Similarity(phrase string) float32 {
+func (n nGram) Similarity(phrase string) int {
 	switch n.size {
 	case 2:
 		return n.twoSimilarity(phrase)
@@ -37,7 +37,7 @@ func (n nGram) Similarity(phrase string) float32 {
 	}
 }
 
-func (n nGram) twoSimilarity(phrase string) float32 {
+func (n nGram) twoSimilarity(phrase string) int {
 	term := *((*[]byte)(unsafe.Pointer(&phrase)))
 	original := *((*[]byte)(unsafe.Pointer(&n.original)))
 
@@ -76,10 +76,10 @@ func (n nGram) twoSimilarity(phrase string) float32 {
 		}
 	}
 
-	return float32(result * 2)
+	return result * 2
 }
 
-func (n nGram) threeSimilarity(phrase string) float32 {
+func (n nGram) threeSimilarity(phrase string) int {
 	term := *((*[]byte)(unsafe.Pointer(&phrase)))
 	original := *((*[]byte)(unsafe.Pointer(&n.original)))
 
@@ -118,10 +118,10 @@ func (n nGram) threeSimilarity(phrase string) float32 {
 		}
 	}
 
-	return float32(result * 3)
+	return result * 3
 }
 
-func (n nGram) nSimilarity(phrase string) float32 {
+func (n nGram) nSimilarity(phrase string) int {
 	result := 0
 
 	i := 0
@@ -149,5 +149,5 @@ spaceLoop:
 		}
 	}
 
-	return float32(result * n.size)
+	return result * n.size
 }

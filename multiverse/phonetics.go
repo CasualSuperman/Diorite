@@ -115,10 +115,10 @@ func preventUnicode(name string) string {
 
 type fuzzySearchList []struct {
 	index      int
-	similarity float32
+	similarity int
 }
 
-func (f *fuzzySearchList) Add(index int, similarity float32) {
+func (f *fuzzySearchList) Add(index int, similarity int) {
 	for i, item := range *f {
 		if item.index == index {
 			if (*f)[i].similarity < similarity {
@@ -172,12 +172,13 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 
 				similarity := searchGrams2.Similarity(name)
 				similarity += searchGrams3.Similarity(name)
-				similarity *= float32(len(name) * bestMatch * bestLen)
-				similarity /= float32(sift3.Sift(searchPhrase, name))
+				similarity *= len(name) * bestMatch * bestLen
 
 				if strings.Contains(name, searchPhrase) {
 					similarity *= 50
 				}
+
+				similarity /= sift3.Sift(searchPhrase, name) + 1
 
 				aggregator.Add(cardIndex, similarity)
 			}
@@ -190,8 +191,8 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					name := preventUnicode(card.Name)
 					similarity := searchGrams2.Similarity(name)
 					similarity += searchGrams3.Similarity(name)
-					similarity *= float32(len(name) * phonetics.DifferenceSoundex(word, searchTerm))
-					similarity /= float32(sift3.Sift(searchPhrase, name))
+					similarity *= len(name) * phonetics.DifferenceSoundex(word, searchTerm)
+					similarity /= sift3.Sift(searchPhrase, name) + 1
 
 					aggregator.Add(cardIndex, similarity)
 				}

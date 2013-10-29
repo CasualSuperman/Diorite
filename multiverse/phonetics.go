@@ -155,13 +155,13 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	searchGrams2 := newNGram(searchPhrase, 2)
 	searchGrams3 := newNGram(searchPhrase, 3)
 
-	for _, searchTerm := range strings.Split(searchPhrase, " ") {
+	for _, searchTerm := range Split(searchPhrase) {
 		for _, result := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
 			for _, cardIndex := range result.([]int) {
 				name := preventUnicode(m.Cards.List[cardIndex].Name)
 
 				bestMatch := 0
-				for _, word := range strings.Split(name, " ") {
+				for _, word := range Split(name) {
 					match := phonetics.DifferenceSoundex(word, searchTerm)
 					if match > bestMatch {
 						bestMatch = match
@@ -182,7 +182,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 		}
 
 		for cardIndex, card := range m.Cards.List {
-			for _, word := range strings.Split(preventUnicode(card.Name), " ") {
+			for _, word := range Split(preventUnicode(card.Name)) {
 				if sift3.Sift(word, searchTerm) <= len(searchTerm)/3 {
 
 					name := preventUnicode(card.Name)

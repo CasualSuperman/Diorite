@@ -6,8 +6,8 @@ import (
 	"unicode"
 
 	"github.com/CasualSuperman/Diorite/trie"
-	"github.com/CasualSuperman/sift3"
 	"github.com/CasualSuperman/phonetics"
+	"github.com/CasualSuperman/sift3"
 )
 
 func generatePhoneticsMaps(cards []*Card) trie.Trie {
@@ -118,6 +118,36 @@ type fuzzySearchList []struct {
 	similarity float32
 }
 
+func (f *fuzzySearchList) Add(index int, similarity float32) {
+	for i, item := range *f {
+		if item.index == index {
+			if (*f)[i].similarity < similarity {
+				(*f)[i].similarity = similarity
+			}
+			return
+		}
+	}
+
+	myLen := len(*f)
+
+	if myLen < cap(*f) {
+		(*f) = (*f)[:myLen+1]
+		myLen++
+	}
+
+	for i := myLen - 1; i >= 0; i-- {
+		if (*f)[i].similarity < similarity {
+			if i < myLen-1 {
+				(*f)[i+1] = (*f)[i]
+			}
+			(*f)[i].index = index
+			(*f)[i].similarity = similarity
+		} else {
+			return
+		}
+	}
+}
+
 // FuzzyNameSearch searches for a card with a similar name to the searchPhrase, and returns count or less of the most likely results.
 func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	var aggregator = make(fuzzySearchList, 0, count)
@@ -128,7 +158,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	for _, searchTerm := range strings.Split(searchPhrase, " ") {
 		for _, candidate := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
 			cardIndices, _ := m.Pronunciations.Get(candidate)
-		cardLoop:
+
 			for _, cardIndex := range cardIndices.([]int) {
 				name := preventUnicode(m.Cards.List[cardIndex].Name)
 
@@ -141,91 +171,29 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 				}
 
 				similarity := searchGrams2.Similarity(name)
-				similarity *= searchGrams3.Similarity(name)
+				similarity += searchGrams3.Similarity(name)
 				similarity *= float32(len(name) * bestMatch)
 				similarity /= float32(sift3.Sift(searchPhrase, name))
 
 				if strings.Contains(name, searchPhrase) {
-					similarity *= 10
+					similarity *= 50
 				}
 
-				var app = struct {
-					index      int
-					similarity float32
-				}{
-					cardIndex,
-					similarity,
-				}
-
-				for i, candidate := range aggregator {
-					if candidate.index == app.index && app.similarity > candidate.similarity {
-						aggregator[i].similarity = app.similarity
-						continue cardLoop
-					}
-				}
-
-
-				if len(aggregator) < cap(aggregator) {
-					i := len(aggregator)
-					aggregator = aggregator[:i+1]
-					aggregator[i] = app
-				} else {
-					for i := count - 1; i >= 0; i-- {
-						if aggregator[i].similarity < app.similarity {
-							if i < count-1 {
-								aggregator[i+1] = aggregator[i]
-							}
-							aggregator[i] = app
-						} else {
-							i = 0
-						}
-					}
-				}
+				aggregator.Add(cardIndex, similarity)
 			}
 		}
-	levenshteinLoop:
+
 		for cardIndex, card := range m.Cards.List {
 			for _, word := range strings.Split(preventUnicode(card.Name), " ") {
 				if sift3.Sift(word, searchTerm) <= len(searchTerm)/3 {
 
 					name := preventUnicode(card.Name)
 					similarity := searchGrams2.Similarity(name)
-					similarity *= searchGrams3.Similarity(name)
-					similarity *= float32(len(name) * phonetics.DifferenceSoundex(word, searchTerm)) / 10.0
+					similarity += searchGrams3.Similarity(name)
+					similarity *= float32(len(name)*phonetics.DifferenceSoundex(word, searchTerm)) / 10.0
 					similarity /= float32(sift3.Sift(searchPhrase, name))
-					var app = struct {
-						index      int
-						similarity float32
-					}{
-						cardIndex,
-						similarity,
-					}
 
-					for i, ci := range aggregator {
-						if cardIndex == ci.index {
-							if ci.similarity < similarity {
-								aggregator[i] = app
-							}
-							continue levenshteinLoop
-						}
-					}
-
-					if len(aggregator) < cap(aggregator) {
-						i := len(aggregator)
-						aggregator = aggregator[:i+1]
-						aggregator[i] = app
-					} else {
-						for i := count - 1; i >= 0; i-- {
-							if aggregator[i].similarity < app.similarity {
-								if i < count-1 {
-									aggregator[i+1] = aggregator[i]
-								}
-								aggregator[i] = app
-							} else {
-								i = 0
-							}
-						}
-					}
+					aggregator.Add(cardIndex, similarity)
 				}
 			}
 		}

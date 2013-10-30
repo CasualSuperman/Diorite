@@ -59,21 +59,21 @@ var unicodeCache = make(map[string]string)
 
 func preventUnicode(name string) string {
 	unicodeLock.RLock()
+
 	if cached, ok := unicodeCache[name]; ok {
 		unicodeLock.RUnlock()
 		return cached
 	}
+	unicodeLock.RUnlock()
+
 	oldName := name
 	name = strings.ToLower(name)
+
 	if cached, ok := unicodeCache[name]; ok {
-		unicodeLock.RUnlock()
 		unicodeLock.Lock()
 		unicodeCache[oldName] = cached
-		unicodeLock.Unlock()
 		return cached
 	}
-
-	unicodeLock.RUnlock()
 
 	clean := ""
 	for _, r := range name {
@@ -113,35 +113,49 @@ func preventUnicode(name string) string {
 	return clean
 }
 
-type fuzzySearchList []struct {
+type fuzzySearchList struct {
+	sync.Mutex
+	data []similarityItem
+}
+
+type similarityItem struct {
 	index      int
 	similarity int
 }
 
+func newFuzzySearchList(count int) fuzzySearchList {
+	t := fuzzySearchList{}
+	t.data = make([]similarityItem, 0, count)
+	return t
+}
+
 func (f *fuzzySearchList) Add(index int, similarity int) {
-	for i, item := range *f {
+	f.Lock()
+	defer f.Unlock()
+	for i, item := range f.data {
 		if item.index == index {
-			if (*f)[i].similarity < similarity {
-				(*f)[i].similarity = similarity
+			if f.data[i].similarity < similarity {
+				f.data[i].similarity = similarity
 			}
 			return
 		}
 	}
 
-	myLen := len(*f)
+	myLen := len(f.data)
 
-	if myLen < cap(*f) {
-		(*f) = (*f)[:myLen+1]
+	if myLen < cap(f.data) {
+		f.data = f.data[:myLen+1]
+		f.data[myLen] = similarityItem{index, similarity}
 		myLen++
 	}
 
 	for i := myLen - 1; i >= 0; i-- {
-		if (*f)[i].similarity < similarity {
+		if f.data[i].similarity < similarity {
 			if i < myLen-1 {
-				(*f)[i+1] = (*f)[i]
+				f.data[i+1] = f.data[i]
 			}
-			(*f)[i].index = index
-			(*f)[i].similarity = similarity
+			f.data[i].index = index
+			f.data[i].similarity = similarity
 		} else {
 			return
 		}
@@ -150,7 +164,8 @@ func (f *fuzzySearchList) Add(index int, similarity int) {
 
 // FuzzyNameSearch searches for a card with a similar name to the searchPhrase, and returns count or less of the most likely results.
 func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
-	var aggregator = make(fuzzySearchList, 0, count)
+	aggregator := newFuzzySearchList(count)
+
 	searchPhrase = preventUnicode(searchPhrase)
 	searchGrams2 := newNGram(searchPhrase, 2)
 	searchGrams3 := newNGram(searchPhrase, 3)
@@ -200,13 +215,14 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 		}
 	}
 
-	if len(aggregator) < count {
-		count = len(aggregator)
+
+	if len(aggregator.data) < count {
+		count = len(aggregator.data)
 	}
 
 	results := make([]*Card, count)
 
-	for i, card := range aggregator {
+	for i, card := range aggregator.data {
 		results[i] = m.Cards.List[card.index]
 	}
 

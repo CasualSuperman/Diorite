@@ -10,12 +10,11 @@ import (
 	"github.com/CasualSuperman/sift3"
 )
 
-func generatePhoneticsMaps(cards []*Card) trie.Trie {
+func generatePhoneticsMaps(cards []scrubbedCard) trie.Trie {
 	metaphoneMap := trie.Alt()
 
 	for i, c := range cards {
-		name := preventUnicode(c.Name)
-		for _, word := range strings.Split(name, " ") {
+		for _, word := range Split(c.Ascii) {
 			if len(word) < 4 {
 				continue
 			}
@@ -54,26 +53,8 @@ func getMetaphone(s string) string {
 	return m
 }
 
-var unicodeLock sync.RWMutex
-var unicodeCache = make(map[string]string)
-
 func preventUnicode(name string) string {
-	unicodeLock.RLock()
-
-	if cached, ok := unicodeCache[name]; ok {
-		unicodeLock.RUnlock()
-		return cached
-	}
-	unicodeLock.RUnlock()
-
-	oldName := name
 	name = strings.ToLower(name)
-
-	if cached, ok := unicodeCache[name]; ok {
-		unicodeLock.Lock()
-		unicodeCache[oldName] = cached
-		return cached
-	}
 
 	clean := ""
 	for _, r := range name {
@@ -99,16 +80,11 @@ func preventUnicode(name string) string {
 			default:
 			}
 		} else {
-			if r == ' ' || unicode.IsLetter(r) {
+			if r == ' ' || unicode.IsLetter(r) || r == '_' {
 				clean += string(r)
 			}
 		}
 	}
-
-	unicodeLock.Lock()
-	unicodeCache[oldName] = clean
-	unicodeCache[name] = clean
-	unicodeLock.Unlock()
 
 	return clean
 }
@@ -177,7 +153,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 			defer done.Done()
 			for _, result := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
 				for _, cardIndex := range result.([]int) {
-					name := preventUnicode(m.Cards.List[cardIndex].Name)
+					name := m.Cards.List[cardIndex].Ascii
 
 					bestMatch := 0
 					bestLen := 0
@@ -229,7 +205,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	results := make([]*Card, count)
 
 	for i, card := range aggregator.data {
-		results[i] = m.Cards.List[card.index]
+		results[i] = m.Cards.List[card.index].Card
 	}
 
 	return results

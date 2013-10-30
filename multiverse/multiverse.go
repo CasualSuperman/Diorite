@@ -13,7 +13,7 @@ type Multiverse struct {
 	Sets  map[string]*Set
 	Cards struct {
 		Printings *skiplist.T
-		List      []*Card
+		List      []scrubbedCard
 	}
 	Pronunciations trie.Trie
 	Modified       time.Time
@@ -22,4 +22,26 @@ type Multiverse struct {
 // Initialize the phonetics map for a constructed Multiverse.
 func (m Multiverse) Initialize() {
 	m.Pronunciations = generatePhoneticsMaps(m.Cards.List)
+}
+
+func (m Multiverse) Card(id int) *Card {
+	return m.Cards.List[id].Card
+}
+
+type scrubbedCard struct {
+	Card  *Card
+	Ascii string
+}
+
+func scrubCards(list []*Card) []scrubbedCard {
+	l := make([]scrubbedCard, len(list))
+
+	for i, card := range list {
+		l[i] = scrubbedCard{
+			card,
+			preventUnicode(card.Name),
+		}
+	}
+
+	return l
 }

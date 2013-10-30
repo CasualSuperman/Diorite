@@ -13,7 +13,7 @@ type Multiverse struct {
 	Sets  map[string]*Set
 	Cards struct {
 		Printings *skiplist.T
-		List      []scrubbedCard
+		List      CardList
 	}
 	Pronunciations trie.Trie
 	Modified       time.Time
@@ -28,13 +28,34 @@ func (m Multiverse) Card(id int) *Card {
 	return m.Cards.List[id].Card
 }
 
+type CardList []scrubbedCard
+
+func (c *CardList) Add(candidate *Card) int {
+	for i, card := range *c {
+		if card.Card == candidate {
+			return i
+		}
+	}
+
+	*c = append(*c, scrubbedCard{
+		candidate,
+		preventUnicode(candidate.Name),
+	})
+
+	return len(*c) - 1
+}
+
+func (c *CardList) Len() int {
+	return len(*c)
+}
+
 type scrubbedCard struct {
 	Card  *Card
 	Ascii string
 }
 
-func scrubCards(list []*Card) []scrubbedCard {
-	l := make([]scrubbedCard, len(list))
+func scrubCards(list []*Card) CardList {
+	l := CardList(make([]scrubbedCard, len(list)))
 
 	for i, card := range list {
 		l[i] = scrubbedCard{

@@ -80,7 +80,7 @@ func Read(r io.Reader) (m Multiverse, err error) {
 
 	var cards = struct {
 		Printings *skiplist.T
-		List      []scrubbedCard
+		List      CardList
 	}{decCards, scrubbedCardList}
 
 	m = Multiverse{

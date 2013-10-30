@@ -164,6 +164,7 @@ func (f *fuzzySearchList) Add(index int, similarity int) {
 
 // FuzzyNameSearch searches for a card with a similar name to the searchPhrase, and returns count or less of the most likely results.
 func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
+	var done sync.WaitGroup
 	aggregator := newFuzzySearchList(count)
 
 	searchPhrase = preventUnicode(searchPhrase)
@@ -171,50 +172,55 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	searchGrams3 := newNGram(searchPhrase, 3)
 
 	for _, searchTerm := range Split(searchPhrase) {
-		for _, result := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
-			for _, cardIndex := range result.([]int) {
-				name := preventUnicode(m.Cards.List[cardIndex].Name)
+		done.Add(1)
+		go func(searchTerm string) {
+			defer done.Done()
+			for _, result := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
+				for _, cardIndex := range result.([]int) {
+					name := preventUnicode(m.Cards.List[cardIndex].Name)
 
-				bestMatch := 0
-				bestLen := 0
-				for _, word := range Split(name) {
-					match := phonetics.DifferenceSoundex(word, searchTerm)
-					if match > bestMatch {
-						bestMatch = match
-						bestLen = len(word)
+					bestMatch := 0
+					bestLen := 0
+					for _, word := range Split(name) {
+						match := phonetics.DifferenceSoundex(word, searchTerm)
+						if match > bestMatch {
+							bestMatch = match
+							bestLen = len(word)
+						}
 					}
-				}
 
-				similarity := searchGrams2.Similarity(name)
-				similarity += searchGrams3.Similarity(name)
-				similarity *= len(name) * bestMatch * bestLen
-
-				if strings.Contains(name, searchPhrase) {
-					similarity *= 50
-				}
-
-				similarity /= sift3.Sift(searchPhrase, name) + 1
-
-				aggregator.Add(cardIndex, similarity)
-			}
-		}
-
-		for cardIndex, card := range m.Cards.List {
-			for _, word := range Split(preventUnicode(card.Name)) {
-				if sift3.Sift(word, searchTerm) <= len(searchTerm)/3 {
-
-					name := preventUnicode(card.Name)
 					similarity := searchGrams2.Similarity(name)
 					similarity += searchGrams3.Similarity(name)
-					similarity *= len(name) * phonetics.DifferenceSoundex(word, searchTerm)
+					similarity *= len(name) * bestMatch * bestLen
 					similarity /= sift3.Sift(searchPhrase, name) + 1
+
+					if strings.Contains(name, searchPhrase) {
+						similarity *= 50
+					}
 
 					aggregator.Add(cardIndex, similarity)
 				}
 			}
-		}
+
+			l := len(m.Cards.List)
+			for cardIndex := 0; cardIndex < l; cardIndex++ {
+				card := m.Cards.List[cardIndex]
+				for _, word := range Split(preventUnicode(card.Name)) {
+					if sift3.Sift(word, searchTerm) <= len(searchTerm)/3 {
+						name := preventUnicode(card.Name)
+						similarity := searchGrams2.Similarity(name)
+						similarity += searchGrams3.Similarity(name)
+						similarity *= len(name) * phonetics.DifferenceSoundex(word, searchTerm)
+						similarity /= sift3.Sift(searchPhrase, name) + 1
+
+						aggregator.Add(cardIndex, similarity)
+					}
+				}
+			}
+		}(searchTerm)
 	}
 
+	done.Wait()
 
 	if len(aggregator.data) < count {
 		count = len(aggregator.data)

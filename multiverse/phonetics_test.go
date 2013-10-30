@@ -16,7 +16,7 @@ func openTestingMultiverse() Multiverse {
 func TestPhoneticCorrection(t *testing.T) {
 	m := openTestingMultiverse()
 
-	if results := m.FuzzyNameSearch("asheok", 1); results[0].Name != "Ashiok, Nightmare Weaver" {
+	if results := m.FuzzyNameSearch("asheok nightmare weaver", 1); results[0].Name != "Ashiok, Nightmare Weaver" {
 		t.Errorf("Searching for 'asheok' should return Ashiok, Nightmare Weaver. Got: %s\n", results[0].Name)
 	}
 }

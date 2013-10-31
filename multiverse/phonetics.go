@@ -178,7 +178,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					similarity += float32(searchGrams3.Similarity(name))
 					similarity /= float32(len(name) + len(searchPhrase))
 					similarity *= float32(bestMatch)
-					similarity /= float32(sift3.Sift(searchPhrase, name) + 1)
+					similarity /= sift3.SiftASCII(searchPhrase, name) + 1
 
 					if similarity != 0 {
 						aggregator.Add(cardIndex, int(similarity))
@@ -203,7 +203,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					if len(word) == 0 {
 						continue
 					}
-					if sift3.Sift(word, searchTerm) <= len(searchTerm)/3 {
+					if sift3.SiftASCII(word, searchTerm)*3.0 <= float32(len(searchTerm)) {
 						match := phonetics.DifferenceSoundex(word, searchTerm)
 						if match > bestMatch {
 							bestMatch = match
@@ -219,7 +219,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 				similarity += float32(searchGrams3.Similarity(name))
 				similarity /= float32(len(name) + len(searchPhrase))
 				similarity *= float32(bestMatch)
-				similarity /= float32(sift3.Sift(searchPhrase, name) + 1)
+				similarity /= sift3.SiftASCII(searchPhrase, name) + 1
 
 				if similarity != 0 {
 					aggregator.Add(cardIndex, int(similarity))

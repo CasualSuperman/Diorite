@@ -2,8 +2,8 @@ package multiverse
 
 import (
 	"os"
-	"runtime"
-	"sync"
+	//"runtime"
+	//"sync"
 	"testing"
 )
 
@@ -15,6 +15,7 @@ func openTestingMultiverse() Multiverse {
 	return m
 }
 
+/*
 func TestNameIsResult(t *testing.T) {
 	m := openTestingMultiverse()
 	var wait sync.WaitGroup
@@ -41,7 +42,7 @@ func TestNameIsResult(t *testing.T) {
 	}
 	wait.Wait()
 }
-
+*/
 func TestPhoneticCorrection(t *testing.T) {
 	m := openTestingMultiverse()
 

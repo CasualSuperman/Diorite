@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/CasualSuperman/Diorite/trie"
-	"github.com/CasualSuperman/phonetics"
+	"github.com/CasualSuperman/phonetics/metaphone"
 	"github.com/glenn-brown/skiplist"
 )
 
@@ -47,7 +47,7 @@ func (c *CardList) Add(candidate *Card) int {
 	i := len(*c) - 1
 
 	for _, str := range Split((*c)[i].Ascii) {
-		(*c)[i].Metaphones = append((*c)[i].Metaphones, phonetics.EncodeMetaphone(str))
+		(*c)[i].Metaphones = append((*c)[i].Metaphones, metaphone.Encode(str))
 	}
 
 	return i
@@ -73,7 +73,7 @@ func scrubCards(list []*Card) CardList {
 			nil,
 		}
 		for _, str := range Split(l[i].Ascii) {
-			l[i].Metaphones = append(l[i].Metaphones, phonetics.EncodeMetaphone(str))
+			l[i].Metaphones = append(l[i].Metaphones, metaphone.Encode(str))
 		}
 	}
 

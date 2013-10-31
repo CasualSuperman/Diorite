@@ -7,7 +7,8 @@ import (
 	"unicode"
 
 	"github.com/CasualSuperman/Diorite/trie"
-	"github.com/CasualSuperman/phonetics"
+	"github.com/CasualSuperman/phonetics/metaphone"
+	"github.com/CasualSuperman/phonetics/ngram"
 	"github.com/CasualSuperman/sift3"
 )
 
@@ -19,7 +20,7 @@ func generatePhoneticsMaps(cards []scrubbedCard) trie.Trie {
 			if len(word) < 4 {
 				continue
 			}
-			mtp := phonetics.EncodeMetaphone(word)
+			mtp := metaphone.Encode(word)
 
 			others, ok := metaphoneMap.Get(mtp)
 			if ok {
@@ -47,7 +48,7 @@ func getMetaphone(s string) string {
 	}
 	phoneticsLock.RUnlock()
 
-	m := phonetics.EncodeMetaphone(s)
+	m := metaphone.Encode(s)
 	phoneticsLock.Lock()
 	phoneticsCache[s] = m
 	phoneticsLock.Unlock()
@@ -131,8 +132,6 @@ func (f *fuzzySearchList) Add(index int, similarity int) {
 	}
 
 	for i := myLen - 2; i >= 0; i-- {
-		//println(i, ":", f.data[i].similarity)
-		//println(similarity)
 		if f.data[i].similarity < similarity {
 			f.data[i+1] = f.data[i]
 			f.data[i].index = index
@@ -158,14 +157,14 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	groupInterval := totalCards / groups
 
 	searchPhrase = preventUnicode(searchPhrase)
-	searchGrams2 := newNGram(searchPhrase, 2)
-	searchGrams3 := newNGram(searchPhrase, 3)
+	searchGrams2 := ngram.New(searchPhrase, 2)
+	searchGrams3 := ngram.New(searchPhrase, 3)
 
 	for _, searchTerm := range Split(searchPhrase) {
 		if len(searchTerm) == 0 {
 			continue
 		}
-		searchMetaphone := phonetics.EncodeMetaphone(searchTerm)
+		searchMetaphone := metaphone.Encode(searchTerm)
 		done.Add(groups)
 
 		for i := 0; i < groups; i++ {
@@ -206,15 +205,8 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 					similarity := float32(searchGrams2.Similarity(name))
 					similarity += float32(searchGrams3.Similarity(name))
 					similarity -= float32(bestMatch * 2)
-					//similarity /= len(name) + len(searchPhrase)
 					dist := sift3.SiftASCII(searchPhrase, name)
 					similarity -= float32(bestMatch) * dist * dist
-
-					//if similarity > 0 || name == "loxodon gatekeeper" {
-					//	println(name)
-					//	println("index\t2g\t3g\tmatch\tsift3\t\tresult")
-					//	println(cardIndex, "\t", searchGrams2.Similarity(name), "\t", searchGrams3.Similarity(name), "\t", bestMatch*2, "\t", int(float32(bestMatch)*dist*dist), "\t\t", int(similarity))
-					//}
 
 					if similarity > 0 {
 						aggregator.Add(cardIndex+start, int(similarity))
@@ -222,49 +214,6 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 				}
 			}(searchTerm, searchMetaphone, start, end)
 		}
-		/*
-			go func(searchTerm string) {
-				defer done.Done()
-				for _, result := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
-					for _, cardIndex := range result.([]int) {
-						name := m.Cards.List[cardIndex].Ascii
-
-						bestMatch := int(^uint(0) >> 1)
-						for _, word := range Split(name) {
-							if len(word) == 0 {
-								continue
-							}
-							match := phonetics.DifferenceSoundex(word, searchTerm)
-							match = int(sift3.SiftASCII(phonetics.EncodeMetaphone(word), phonetics.EncodeMetaphone(searchTerm)))
-							if name == "anax and cymede" {
-								println(word, searchTerm)
-								println(match)
-							}
-							if match < bestMatch {
-								bestMatch = match
-							}
-						}
-
-						similarity := float32(searchGrams2.Similarity(name))
-						similarity += float32(searchGrams3.Similarity(name))
-						similarity -= float32(bestMatch * 2)
-						//similarity /= len(name) + len(searchPhrase)
-						dist := sift3.SiftASCII(searchPhrase, name)
-						similarity -= float32(bestMatch) * dist * dist
-
-						if name == "anax and cymede" || similarity > 2.0 {
-							println(name)
-							println("2g\t3g\tmatch\tsift3\t\tresult")
-							println(searchGrams2.Similarity(name), "\t", searchGrams3.Similarity(name), "\t", bestMatch*2, "\t", bestMatch*int(sift3.SiftASCII(searchPhrase, name)), "\t\t", int(similarity))
-						}
-
-						if similarity > 0 {
-							aggregator.Add(cardIndex, int(similarity))
-						}
-					}
-				}
-			}(searchTerm)
-		*/
 	}
 
 	done.Wait()

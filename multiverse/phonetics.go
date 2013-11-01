@@ -9,7 +9,7 @@ import (
 	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/CasualSuperman/phonetics/metaphone"
 	"github.com/CasualSuperman/phonetics/ngram"
-	"github.com/CasualSuperman/sift3"
+	"github.com/CasualSuperman/phonetics/sift3"
 )
 
 func generatePhoneticsMaps(cards []scrubbedCard) trie.Trie {

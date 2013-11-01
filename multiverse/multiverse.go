@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/CasualSuperman/Diorite/trie"
+	"github.com/CasualSuperman/phonetics/metaphone"
 	"github.com/glenn-brown/skiplist"
 )
 
@@ -40,9 +41,16 @@ func (c *CardList) Add(candidate *Card) int {
 	*c = append(*c, scrubbedCard{
 		candidate,
 		preventUnicode(candidate.Name),
+		nil,
 	})
 
-	return len(*c) - 1
+	i := len(*c) - 1
+
+	for _, str := range Split((*c)[i].Ascii) {
+		(*c)[i].Metaphones = append((*c)[i].Metaphones, metaphone.Encode(str))
+	}
+
+	return i
 }
 
 func (c *CardList) Len() int {
@@ -50,8 +58,9 @@ func (c *CardList) Len() int {
 }
 
 type scrubbedCard struct {
-	Card  *Card
-	Ascii string
+	Card       *Card
+	Ascii      string
+	Metaphones []string
 }
 
 func scrubCards(list []*Card) CardList {
@@ -61,6 +70,10 @@ func scrubCards(list []*Card) CardList {
 		l[i] = scrubbedCard{
 			card,
 			preventUnicode(card.Name),
+			nil,
+		}
+		for _, str := range Split(l[i].Ascii) {
+			l[i].Metaphones = append(l[i].Metaphones, metaphone.Encode(str))
 		}
 	}
 

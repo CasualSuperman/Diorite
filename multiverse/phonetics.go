@@ -1,12 +1,14 @@
 package multiverse
 
 import (
+	"runtime"
 	"strings"
 	"sync"
 	"unicode"
 
 	"github.com/CasualSuperman/Diorite/trie"
-	"github.com/CasualSuperman/phonetics"
+	"github.com/CasualSuperman/phonetics/metaphone"
+	"github.com/CasualSuperman/phonetics/ngram"
 	"github.com/CasualSuperman/sift3"
 )
 
@@ -18,7 +20,7 @@ func generatePhoneticsMaps(cards []scrubbedCard) trie.Trie {
 			if len(word) < 4 {
 				continue
 			}
-			mtp := phonetics.EncodeMetaphone(word)
+			mtp := metaphone.Encode(word)
 
 			others, ok := metaphoneMap.Get(mtp)
 			if ok {
@@ -46,7 +48,7 @@ func getMetaphone(s string) string {
 	}
 	phoneticsLock.RUnlock()
 
-	m := phonetics.EncodeMetaphone(s)
+	m := metaphone.Encode(s)
 	phoneticsLock.Lock()
 	phoneticsCache[s] = m
 	phoneticsLock.Unlock()
@@ -80,7 +82,7 @@ func preventUnicode(name string) string {
 			default:
 			}
 		} else {
-			if r == ' ' || unicode.IsLetter(r) || r == '_' {
+			if r == ' ' || unicode.IsLetter(r) || r == '_' || r == '-' {
 				clean += string(r)
 			}
 		}
@@ -112,6 +114,10 @@ func (f *fuzzySearchList) Add(index int, similarity int) {
 		if item.index == index {
 			if f.data[i].similarity < similarity {
 				f.data[i].similarity = similarity
+				for i >= 1 && f.data[i].similarity > f.data[i-1].similarity {
+					f.data[i-1], f.data[i] = f.data[i], f.data[i-1]
+					i--
+				}
 			}
 			return
 		}
@@ -125,16 +131,18 @@ func (f *fuzzySearchList) Add(index int, similarity int) {
 		myLen++
 	}
 
-	for i := myLen - 1; i >= 0; i-- {
+	for i := myLen - 2; i >= 0; i-- {
 		if f.data[i].similarity < similarity {
-			if i < myLen-1 {
-				f.data[i+1] = f.data[i]
-			}
+			f.data[i+1] = f.data[i]
 			f.data[i].index = index
 			f.data[i].similarity = similarity
 		} else {
 			return
 		}
+	}
+	if f.data[0].similarity < similarity {
+		f.data[0].index = index
+		f.data[0].similarity = similarity
 	}
 }
 
@@ -143,89 +151,69 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	var done sync.WaitGroup
 	aggregator := newFuzzySearchList(count)
 
+	groups := runtime.GOMAXPROCS(-1)
+
+	totalCards := m.Cards.List.Len()
+	groupInterval := totalCards / groups
+
 	searchPhrase = preventUnicode(searchPhrase)
-	searchGrams2 := newNGram(searchPhrase, 2)
-	searchGrams3 := newNGram(searchPhrase, 3)
+	searchGrams2 := ngram.New(searchPhrase, 2)
+	searchGrams3 := ngram.New(searchPhrase, 3)
 
 	for _, searchTerm := range Split(searchPhrase) {
 		if len(searchTerm) == 0 {
 			continue
 		}
-		done.Add(2)
+		searchMetaphone := metaphone.Encode(searchTerm)
+		done.Add(groups)
 
-		go func(searchTerm string) {
-			defer done.Done()
-			for _, result := range m.Pronunciations.Search(getMetaphone(searchTerm)) {
-				for _, cardIndex := range result.([]int) {
-					name := m.Cards.List[cardIndex].Ascii
+		for i := 0; i < groups; i++ {
+			start := i * groupInterval
+			end := start + groupInterval
+			if i == groups-1 {
+				end = totalCards
+			}
 
-					bestMatch := 0
-					for _, word := range Split(name) {
-						if len(word) == 0 {
-							continue
-						}
-						match := phonetics.DifferenceSoundex(word, searchTerm)
-						if match > bestMatch {
-							bestMatch = match
-						}
+			go func(searchTerm, searchMetaphone string, start, end int) {
+				defer done.Done()
+				cards := m.Cards.List[start:end]
+				for cardIndex := range cards {
+					card := cards[cardIndex]
+					name := card.Ascii
+					metaphones := card.Metaphones
+
+					if name == searchPhrase {
+						//	println("EXACT MATCH")
+						aggregator.Add(cardIndex+start, int(^uint(0)>>1))
+						continue
 					}
 
-					if bestMatch == 0 {
-						continue
+					bestMatch := int(^uint(0) >> 1)
+
+					for _, metaphone := range metaphones {
+						if len(metaphone) == 0 {
+							continue
+						}
+
+						match := int(sift3.SiftASCII(metaphone, searchMetaphone))
+
+						if match < bestMatch {
+							bestMatch = match
+						}
 					}
 
 					similarity := float32(searchGrams2.Similarity(name))
 					similarity += float32(searchGrams3.Similarity(name))
-					similarity /= float32(len(name) + len(searchPhrase))
-					similarity *= float32(bestMatch)
-					similarity /= float32(sift3.Sift(searchPhrase, name) + 1)
+					similarity -= float32(bestMatch * 2)
+					dist := sift3.SiftASCII(searchPhrase, name)
+					similarity -= float32(bestMatch) * dist * dist
 
-					if similarity != 0 {
-						aggregator.Add(cardIndex, int(similarity))
+					if similarity > 0 {
+						aggregator.Add(cardIndex+start, int(similarity))
 					}
 				}
-			}
-		}(searchTerm)
-
-		go func(searchTerm string) {
-			defer done.Done()
-			for cardIndex := range m.Cards.List {
-				name := m.Cards.List[cardIndex].Ascii
-
-				if name == searchPhrase {
-					aggregator.Add(cardIndex, int(^uint(0)>>1))
-					continue
-				}
-
-				bestMatch := 0
-
-				for _, word := range Split(name) {
-					if len(word) == 0 {
-						continue
-					}
-					if sift3.Sift(word, searchTerm) <= len(searchTerm)/3 {
-						match := phonetics.DifferenceSoundex(word, searchTerm)
-						if match > bestMatch {
-							bestMatch = match
-						}
-					}
-				}
-
-				if bestMatch == 0 {
-					continue
-				}
-
-				similarity := float32(searchGrams2.Similarity(name))
-				similarity += float32(searchGrams3.Similarity(name))
-				similarity /= float32(len(name) + len(searchPhrase))
-				similarity *= float32(bestMatch)
-				similarity /= float32(sift3.Sift(searchPhrase, name) + 1)
-
-				if similarity != 0 {
-					aggregator.Add(cardIndex, int(similarity))
-				}
-			}
-		}(searchTerm)
+			}(searchTerm, searchMetaphone, start, end)
+		}
 	}
 
 	done.Wait()

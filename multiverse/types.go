@@ -2,6 +2,9 @@ package multiverse
 
 import (
 	"time"
+
+	"github.com/CasualSuperman/Diorite/trie"
+	"github.com/glenn-brown/skiplist"
 )
 
 // ManaColor is a bitmask of possible Mana Colors.
@@ -21,8 +24,8 @@ type SetType byte
 
 // The colors of mana that exist in the Multiverse.
 var ManaColors = struct {
-	White, Blue, Black, Red, Green ManaColor
-}{1, 2, 4, 8, 16}
+	Colorless, White, Blue, Black, Red, Green ManaColor
+}{0, 1, 2, 4, 8, 16}
 
 // The borders that cards have.
 var BorderColors = struct {
@@ -38,6 +41,18 @@ var Rarities = struct {
 var SetTypes = struct {
 	Core, Expansion, Reprint, Box, Un, FromTheVault, PremiumDeck, DuelDeck, Starter, Commander, Planechase, Archenemy SetType
 }{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+
+// Multiverse is an entire Magic: The Gathering multiverse.
+// It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
+type Multiverse struct {
+	Sets  []*Set
+	Cards struct {
+		Printings *skiplist.T
+		List      CardList
+	}
+	Pronunciations trie.Trie
+	Modified       time.Time
+}
 
 // Set is a Magic: The Gathering set, such as Innistrad or Zendikar.
 type Set struct {
@@ -73,6 +88,13 @@ type Card struct {
 	}
 
 	Rulings []Ruling
+
+	Printings []Printing
+}
+
+type Printing struct {
+	ID  MultiverseID
+	Set *Set
 }
 
 // Ruling is a ruling made by a judge that can clarify difficult situations that may arise.

@@ -1,24 +1,8 @@
 package multiverse
 
 import (
-	"time"
-
-	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/CasualSuperman/phonetics/metaphone"
-	"github.com/glenn-brown/skiplist"
 )
-
-// Multiverse is an entire Magic: The Gathering multiverse.
-// It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
-type Multiverse struct {
-	Sets  map[string]*Set
-	Cards struct {
-		Printings *skiplist.T
-		List      CardList
-	}
-	Pronunciations trie.Trie
-	Modified       time.Time
-}
 
 // Initialize the phonetics map for a constructed Multiverse.
 func (m Multiverse) Initialize() {
@@ -63,19 +47,15 @@ type scrubbedCard struct {
 	Metaphones []string
 }
 
-func scrubCards(list []*Card) CardList {
-	l := CardList(make([]scrubbedCard, len(list)))
+func (c CardList) scrub() {
+	for i := range c {
+		c[i].Ascii = preventUnicode(c[i].Card.Name)
 
-	for i, card := range list {
-		l[i] = scrubbedCard{
-			card,
-			preventUnicode(card.Name),
-			nil,
-		}
-		for _, str := range Split(l[i].Ascii) {
-			l[i].Metaphones = append(l[i].Metaphones, metaphone.Encode(str))
+		words := Split(c[i].Ascii)
+		c[i].Metaphones = make([]string, len(words))
+
+		for j, str := range Split(c[i].Ascii) {
+			c[i].Metaphones[j] = metaphone.Encode(str)
 		}
 	}
-
-	return l
 }

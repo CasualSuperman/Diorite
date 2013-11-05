@@ -61,9 +61,9 @@ type onlineMultiverse struct {
 	Modified time.Time
 }
 
-func getCardIndex(cardList []*m.Card, cardName string) int {
+func getCardIndex(cardList m.CardList, cardName string) int {
 	for i, card := range cardList {
-		if card.Name == cardName {
+		if card.Card.Name == cardName {
 			return i
 		}
 	}
@@ -72,19 +72,28 @@ func getCardIndex(cardList []*m.Card, cardName string) int {
 
 // Convert to a Multiverse.
 func (om onlineMultiverse) Convert() (mv m.Multiverse) {
-	mv.Sets = make(map[string]*m.Set)
+	mv.Sets = make([]*m.Set, 0, len(om.Sets))
 	mv.Cards.Printings = skiplist.New()
 	mv.Modified = om.Modified
 
 	for _, set := range om.Sets {
-		mv.Sets[set.Name] = setFromJSON(set)
+		mv.Sets = append(mv.Sets, setFromJSON(set))
 		for _, card := range set.Cards {
+			var printing = struct {
+				ID  m.MultiverseID
+				Set *m.Set
+			}{m.MultiverseID(card.MultiverseID), mv.Sets[len(mv.Sets)-1]}
+
 			index := getCardIndex(mv.Cards.List, card.Name)
 			if index == -1 {
 				index = len(mv.Cards.List)
 				c := new(m.Card)
 				copyCardFields(&card, c)
-				mv.Cards.List = append(mv.Cards.List, c)
+				c.Printings = append(c.Printings, printing)
+				mv.Cards.List.Add(c)
+			} else {
+				c := mv.Cards.List[index].Card
+				c.Printings = append(c.Printings, printing)
 			}
 			mv.Cards.Printings.Insert(card.MultiverseID, index)
 		}

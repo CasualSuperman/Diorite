@@ -2,7 +2,6 @@ package multiverse
 
 import (
 	"encoding/gob"
-	"fmt"
 	"io"
 	"time"
 

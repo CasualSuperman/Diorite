@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sort"
 	"time"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
@@ -70,6 +71,23 @@ func getCardIndex(cardList m.CardList, cardName string) int {
 	return -1
 }
 
+type setSorter struct {
+	sets []*m.Set
+	by   func(s1, s2 *m.Set) bool
+}
+
+func (s setSorter) Len() int {
+	return len(s.sets)
+}
+
+func (s setSorter) Swap(i, j int) {
+	s.sets[i], s.sets[j] = s.sets[j], s.sets[i]
+}
+
+func (s setSorter) Less(i, j int) bool {
+	return s.by(s.sets[i], s.sets[j])
+}
+
 // Convert to a Multiverse.
 func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 	mv.Sets = make([]*m.Set, 0, len(om.Sets))
@@ -77,12 +95,49 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 	mv.Modified = om.Modified
 
 	for _, set := range om.Sets {
-		mv.Sets = append(mv.Sets, setFromJSON(set))
+		mSet := setFromJSON(set)
+		mv.Sets = append(mv.Sets, mSet)
+	}
+
+	s := setSorter{
+		mv.Sets,
+		releaseDateSort,
+	}
+
+	sort.Sort(s)
+
+	for _, set := range om.Sets {
+		var setIndex int
+
+		for i, s := range mv.Sets {
+			if s.Name == set.Name {
+				setIndex = i
+				break
+			}
+		}
+
 		for _, card := range set.Cards {
-			var printing = struct {
-				ID  m.MultiverseID
-				Set *m.Set
-			}{m.MultiverseID(card.MultiverseID), mv.Sets[len(mv.Sets)-1]}
+			var rarity m.Rarity
+			switch card.Rarity {
+			case "Common":
+				rarity = m.Rarities.Common
+			case "Uncommon":
+				rarity = m.Rarities.Uncommon
+			case "Rare":
+				rarity = m.Rarities.Rare
+			case "Mythic Rare":
+				rarity = m.Rarities.Mythic
+			case "Special":
+				rarity = m.Rarities.Special
+			case "Basic Land":
+				rarity = m.Rarities.Basic
+			}
+
+			var printing = m.Printing{
+				m.MultiverseID(card.MultiverseID),
+				mv.Sets[setIndex],
+				rarity,
+			}
 
 			index := getCardIndex(mv.Cards.List, card.Name)
 			if index == -1 {
@@ -100,4 +155,8 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 	}
 
 	return
+}
+
+func releaseDateSort(s1, s2 *m.Set) bool {
+	return s2.Released.Before(s1.Released)
 }

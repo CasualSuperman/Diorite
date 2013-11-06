@@ -33,21 +33,6 @@ func copyCardFields(jc *jsonCard, c *m.Card) {
 	c.Supertypes = append(append(c.Supertypes, jc.Supertypes...), jc.Types...)
 	c.Types = append(c.Types, jc.Subtypes...)
 
-	switch jc.Rarity {
-	case "Common":
-		c.Rarity = m.Rarities.Common
-	case "Uncommon":
-		c.Rarity = m.Rarities.Uncommon
-	case "Rare":
-		c.Rarity = m.Rarities.Rare
-	case "Mythic Rare":
-		c.Rarity = m.Rarities.Mythic
-	case "Special":
-		c.Rarity = m.Rarities.Special
-	case "Basic Land":
-		c.Rarity = m.Rarities.Basic
-	}
-
 	c.Text = jc.Text
 	c.Flavor = jc.Flavor
 	c.Artist = jc.Artist

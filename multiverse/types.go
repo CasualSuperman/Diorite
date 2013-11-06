@@ -74,8 +74,6 @@ type Card struct {
 
 	Supertypes, Types []string
 
-	Rarity Rarity
-
 	Text   string
 	Flavor string
 
@@ -93,31 +91,15 @@ type Card struct {
 }
 
 type Printing struct {
-	ID  MultiverseID
-	Set *Set
+	ID     MultiverseID
+	Set    *Set
+	Rarity Rarity
 }
 
 // Ruling is a ruling made by a judge that can clarify difficult situations that may arise.
 type Ruling struct {
 	Date time.Time
 	Text string
-}
-
-type setSorter struct {
-	sets []Set
-	by   func(s1, s2 *Set) bool
-}
-
-func (s *setSorter) Len() int {
-	return len(s.sets)
-}
-
-func (s *setSorter) Swap(i, j int) {
-	s.sets[i], s.sets[j] = s.sets[j], s.sets[i]
-}
-
-func (s *setSorter) Less(i, j int) bool {
-	return s.by(&s.sets[i], &s.sets[j])
 }
 
 // IsCreature is a convenience method that returns if the card is a creature.

@@ -40,6 +40,11 @@ func copyCardFields(jc *jsonCard, c *m.Card) {
 
 	c.Rulings = make([]m.Ruling, len(jc.Rulings))
 
+	for i, ruling := range jc.Rulings {
+		c.Rulings[i].Text = ruling.Text
+		c.Rulings[i].Date, _ = time.Parse("2006-01-02", ruling.Date)
+	}
+
 	power, err := strconv.ParseFloat(jc.Power, 32)
 
 	if err == nil {

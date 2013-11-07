@@ -45,11 +45,14 @@ type gobCard struct {
 	Rulings []Ruling
 
 	Prints []gobPrinting
+
+	Restricted, Banned []string
 }
 
 type gobPrinting struct {
-	ID  MultiverseID
-	Set int
+	ID     MultiverseID
+	Set    int
+	Rarity Rarity
 }
 
 func (g *gobCard) card(sets []*Set) *Card {
@@ -62,8 +65,6 @@ func (g *gobCard) card(sets []*Set) *Card {
 
 	c.Supertypes = g.Supertypes
 	c.Types = g.Types
-
-	c.Rarity = g.Rarity
 
 	c.Text = g.Text
 	c.Flavor = g.Flavor
@@ -79,7 +80,27 @@ func (g *gobCard) card(sets []*Set) *Card {
 	c.Printings = make([]Printing, len(g.Prints))
 
 	for j, printing := range g.Prints {
+		c.Printings[j].Rarity = printing.Rarity
+		c.Printings[j].ID = printing.ID
 		c.Printings[j].Set = sets[printing.Set]
+	}
+
+	for _, format := range g.Restricted {
+		for _, f := range Formats.List {
+			if f.Name == format {
+				c.Restricted = append(c.Restricted, f)
+				break
+			}
+		}
+	}
+
+	for _, format := range g.Banned {
+		for _, f := range Formats.List {
+			if f.Name == format {
+				c.Banned = append(c.Banned, f)
+				break
+			}
+		}
 	}
 
 	return &c
@@ -96,8 +117,6 @@ func (c *Card) gobCard(sets []*Set) gobCard {
 	g.Supertypes = c.Supertypes
 	g.Types = c.Types
 
-	g.Rarity = c.Rarity
-
 	g.Text = c.Text
 	g.Flavor = c.Flavor
 
@@ -111,10 +130,19 @@ func (c *Card) gobCard(sets []*Set) gobCard {
 
 	g.Prints = make([]gobPrinting, len(c.Printings))
 
+	for _, format := range c.Restricted {
+		g.Restricted = append(g.Restricted, format.Name)
+	}
+	for _, format := range c.Banned {
+		g.Banned = append(g.Banned, format.Name)
+	}
+
 setLoop:
 	for i, set := range sets {
 		for j, printing := range c.Printings {
 			if printing.Set == set {
+				g.Prints[j].Rarity = printing.Rarity
+				g.Prints[j].ID = printing.ID
 				g.Prints[j].Set = i
 				continue setLoop
 			}

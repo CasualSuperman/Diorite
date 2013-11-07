@@ -88,6 +88,8 @@ type Card struct {
 	Rulings []Ruling
 
 	Printings []Printing
+
+	Restricted, Banned []*Format
 }
 
 type Printing struct {

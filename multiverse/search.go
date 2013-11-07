@@ -22,7 +22,8 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 	for i := 0; i < cores; i++ {
 		start := sectionLen * i
 		end := start + sectionLen
-		if i == cores {
+
+		if i == cores-1 {
 			end = c.Len()
 		}
 

@@ -5,6 +5,22 @@ import (
 	"runtime"
 )
 
+func (r Rarity) Ok(c *Card) (bool, error) {
+	for _, printing := range c.Printings {
+		if printing.Rarity == r {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (m ManaColor) Ok(c *Card) (bool, error) {
+	if m == ManaColors.Colorless {
+		return c.Colors == 0, nil
+	}
+	return c.Colors&m != 0, nil
+}
+
 type Filter interface {
 	Ok(*Card) (bool, error)
 }

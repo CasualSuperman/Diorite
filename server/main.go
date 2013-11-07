@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -14,22 +15,15 @@ var multiverseDL []byte
 var multiverseModified time.Time
 
 func main() {
-	var err error
-	log.Println("Downloading multiverse.")
-
-	multiverseDL, multiverseModified, err = getMultiverseData()
-
-	if err != nil {
-		log.Fatalln("Unable to download multiverse.")
-	}
-
-	log.Println("Multiverse downloaded.")
-
 	go updateMultiverse()
 
-	log.Println("Starting server.")
+	log.Println("Starting query server.")
 
 	ln, err := net.Listen("tcp", *port)
+
+	if err != nil {
+		log.Fatalln("Unable to bind socket:", err.Error())
+	}
 
 	for {
 		conn, err := ln.Accept()
@@ -43,6 +37,18 @@ func main() {
 }
 
 func updateMultiverse() {
+	var err error
+
+	log.Println("Downloading multiverse.")
+
+	multiverseDL, multiverseModified, err = getMultiverseData()
+
+	if err != nil {
+		log.Fatalln("Unable to download multiverse.")
+	}
+
+	log.Println("Multiverse downloaded.")
+
 	dailyUpdate := time.Tick(time.Hour * 12)
 
 	for {
@@ -81,17 +87,19 @@ func provideDownload(conn net.Conn) {
 
 	// We want to know the modification time of the multiverse.
 	case "multiverseMod":
-		log.Println("Timestamp accessed.")
 		conn.Write([]byte(multiverseModified.Format(lastModifiedFormat) + "\n"))
+		log.Println("Timestamp accessed.")
 		conn.Close()
 
 	// We want to download the multiverse.
 	case "multiverseDL":
-		log.Println("Multiverse downloaded.")
 		conn.Write(multiverseDL)
+		log.Println("Multiverse downloaded.")
 		conn.Close()
 
 	default:
-		log.Printf("Unrecognized request '%s'.\n", text)
+		answer := fmt.Sprintf("Unrecognized request '%s'.\n")
+		log.Printf(answer)
+		conn.Write([]byte(answer))
 	}
 }

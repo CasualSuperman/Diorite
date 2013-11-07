@@ -137,14 +137,13 @@ func (c *Card) gobCard(sets []*Set) gobCard {
 		g.Banned = append(g.Banned, format.Name)
 	}
 
-setLoop:
 	for i, set := range sets {
 		for j, printing := range c.Printings {
 			if printing.Set == set {
 				g.Prints[j].Rarity = printing.Rarity
 				g.Prints[j].ID = printing.ID
 				g.Prints[j].Set = i
-				continue setLoop
+				break
 			}
 		}
 	}

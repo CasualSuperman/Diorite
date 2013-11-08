@@ -8,7 +8,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/CasualSuperman/Diorite/multiverse"
+	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 		canSaveMultiverse = false
 	}
 
-	var m multiverse.Multiverse
+	var multiverse m.Multiverse
 
 	if canSaveMultiverse {
 		multiverseFile, err := os.Open(MultiverseFileName)
@@ -37,7 +37,7 @@ func main() {
 			}
 		} else {
 			log.Println("Loading local multiverse.")
-			m, err = multiverse.Read(multiverseFile)
+			multiverse, err = m.Read(multiverseFile)
 			multiverseFile.Close()
 
 			if err != nil {
@@ -65,7 +65,7 @@ func main() {
 		log.Println("Warning: Online database unavailable. Your card index may be out of date.")
 	}
 
-	if mostRecentUpdate.After(m.Modified) {
+	if mostRecentUpdate.After(multiverse.Modified) {
 		var saveTo io.Writer
 		if canSaveMultiverse {
 			saveTo, err = os.Create(MultiverseFileName)
@@ -83,13 +83,13 @@ func main() {
 			}
 			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		} else {
-			m = newM
+			multiverse = newM
 		}
 	} else {
 		log.Println("No updates available.")
 	}
 
-	cards := m.FuzzyNameSearch("aetherling", 15)
+	cards := multiverse.FuzzyNameSearch("aetherling", 15)
 
 	names := make([]string, len(cards))
 	for i, card := range cards {

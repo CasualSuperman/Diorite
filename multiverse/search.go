@@ -30,7 +30,7 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 	cores := runtime.GOMAXPROCS(-1)
 	sectionLen := c.Len() / cores
 
-	cardChan := make(chan *Card, cores*4)
+	cardChan := make(chan *Card, cores*16)
 	doneChan := make(chan bool)
 	errChan := make(chan error)
 	list := make([]*Card, 0, 1)

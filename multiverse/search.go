@@ -63,23 +63,16 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 		case <-doneChan:
 			cores--
 		case c := <-cardChan:
-			for _, card := range list {
-				if card == c {
-					continue
-				}
-			}
-			l := len(list)
-			if l < cap(list) {
-				list = list[:l+1]
-			} else {
-				newList := make([]*Card, l+1, l*2)
-				copy(newList, list)
-				list = newList
-			}
-			list[l] = c
+			appendNonDuplicateToCardList(&list, c)
 		case err := <-errChan:
 			return nil, err
 		}
+	}
+
+	for len(cardChan) > 0 {
+		c := <-cardChan
+		appendNonDuplicateToCardList(&list, c)
+
 	}
 
 	shortList := make([]*Card, len(list))
@@ -89,6 +82,27 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 	}
 
 	return shortList, nil
+}
+
+func appendToCardList(list *[]*Card, c *Card) {
+	for _, card := range *list {
+		if card == c {
+			return
+		}
+	}
+	appendNonDuplicateToCardList(list, c)
+}
+
+func appendNonDuplicateToCardList(list *[]*Card, c *Card) {
+	l := len(*list)
+	if l < cap(*list) {
+		*list = (*list)[:l+1]
+	} else {
+		newList := make([]*Card, l+1, l*2)
+		copy(newList, *list)
+		*list = newList
+	}
+	(*list)[l] = c
 }
 
 type Not struct {

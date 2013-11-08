@@ -106,11 +106,11 @@ func appendNonDuplicateToCardList(list *[]*Card, c *Card) {
 }
 
 type Not struct {
-	f Filter
+	Filter
 }
 
 func (n Not) Ok(c *Card) (bool, error) {
-	ok, err := n.f.Ok(c)
+	ok, err := n.Filter.Ok(c)
 	return !ok, err
 }
 

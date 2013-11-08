@@ -21,6 +21,26 @@ type Format struct {
 	Name  string
 }
 
+type unrecognizedFormatErr string
+
+func (err unrecognizedFormatErr) Error() string {
+	return "unrecognized format: " + string(err)
+}
+
+func (f *Format) GobDecode(name []byte) error {
+	for _, format := range Formats.List {
+		if format.Name == string(name) {
+			*f = *format
+			return nil
+		}
+	}
+	return unrecognizedFormatErr(string(name))
+}
+
+func (f *Format) GobEncode() ([]byte, error) {
+	return []byte(f.Name), nil
+}
+
 // The deck formats we know about. (Standard, Extended, Modern, etc.)
 var Formats = struct {
 	Standard, Extended, Modern, Vintage, Legacy, Un *Format

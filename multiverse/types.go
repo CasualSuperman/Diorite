@@ -3,7 +3,6 @@ package multiverse
 import (
 	"time"
 
-	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/glenn-brown/skiplist"
 )
 
@@ -50,8 +49,7 @@ type Multiverse struct {
 		Printings *skiplist.T
 		List      CardList
 	}
-	Pronunciations trie.Trie
-	Modified       time.Time
+	Modified time.Time
 }
 
 // Set is a Magic: The Gathering set, such as Innistrad or Zendikar.

@@ -211,8 +211,6 @@ func Read(r io.Reader) (m Multiverse, err error) {
 	}
 	scrubbedCardList.scrub()
 
-	decPronunciations := generatePhoneticsMaps(scrubbedCardList)
-
 	var cards = struct {
 		Printings *skiplist.T
 		List      CardList
@@ -221,7 +219,6 @@ func Read(r io.Reader) (m Multiverse, err error) {
 	m = Multiverse{
 		mDec.Sets,
 		cards,
-		decPronunciations,
 		mDec.Modified,
 	}
 

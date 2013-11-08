@@ -6,7 +6,6 @@ import (
 
 // Initialize the phonetics map for a constructed Multiverse.
 func (m Multiverse) Initialize() {
-	m.Pronunciations = generatePhoneticsMaps(m.Cards.List)
 }
 
 func (m Multiverse) Card(id int) *Card {

@@ -6,54 +6,10 @@ import (
 	"sync"
 	"unicode"
 
-	"github.com/CasualSuperman/Diorite/trie"
 	"github.com/CasualSuperman/phonetics/metaphone"
 	"github.com/CasualSuperman/phonetics/ngram"
 	"github.com/CasualSuperman/phonetics/sift3"
 )
-
-func generatePhoneticsMaps(cards []scrubbedCard) trie.Trie {
-	metaphoneMap := trie.Alt()
-
-	for i, c := range cards {
-		for _, word := range Split(c.Ascii) {
-			if len(word) < 4 {
-				continue
-			}
-			mtp := metaphone.Encode(word)
-
-			others, ok := metaphoneMap.Get(mtp)
-			if ok {
-				slice := others.([]int)
-				slice = append(slice, i)
-				metaphoneMap.Remove(mtp)
-				metaphoneMap.Add(mtp, slice)
-			} else {
-				metaphoneMap.Add(mtp, []int{i})
-			}
-		}
-	}
-
-	return metaphoneMap
-}
-
-var phoneticsLock sync.RWMutex
-var phoneticsCache = make(map[string]string)
-
-func getMetaphone(s string) string {
-	phoneticsLock.RLock()
-	if cached, ok := phoneticsCache[s]; ok {
-		phoneticsLock.RUnlock()
-		return cached
-	}
-	phoneticsLock.RUnlock()
-
-	m := metaphone.Encode(s)
-	phoneticsLock.Lock()
-	phoneticsCache[s] = m
-	phoneticsLock.Unlock()
-	return m
-}
 
 func preventUnicode(name string) string {
 	name = strings.ToLower(name)

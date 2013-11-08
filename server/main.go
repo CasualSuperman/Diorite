@@ -44,6 +44,7 @@ func updateMultiverse() {
 	multiverseDL, multiverseModified, err = getMultiverseData()
 
 	if err != nil {
+		log.Println("Error!", err.Error())
 		log.Fatalln("Unable to download multiverse.")
 	}
 
@@ -70,6 +71,7 @@ func updateMultiverse() {
 		newData, newMod, err := getMultiverseData()
 
 		if err != nil {
+			log.Println("Error getting multiverse data:", err.Error())
 			continue
 		}
 
@@ -81,25 +83,29 @@ func updateMultiverse() {
 
 func provideDownload(conn net.Conn) {
 	s := bufio.NewScanner(conn)
-	s.Scan()
 
-	switch text := s.Text(); text {
+	for s.Scan() {
+		switch text := s.Text(); text {
+		// We want to know the modification time of the multiverse.
+		case "multiverseMod":
+			conn.Write([]byte(multiverseModified.Format(lastModifiedFormat) + "\n"))
+			log.Println("Timestamp accessed.")
 
-	// We want to know the modification time of the multiverse.
-	case "multiverseMod":
-		conn.Write([]byte(multiverseModified.Format(lastModifiedFormat) + "\n"))
-		log.Println("Timestamp accessed.")
-		conn.Close()
+		// We want to download the multiverse.
+		case "multiverseDL":
+			conn.Write(multiverseDL)
+			log.Println("Multiverse downloaded.")
 
-	// We want to download the multiverse.
-	case "multiverseDL":
-		conn.Write(multiverseDL)
-		log.Println("Multiverse downloaded.")
-		conn.Close()
+		// We're done, close the connection.
+		case "close":
+			conn.Close()
+			log.Println("Client disconnected.")
+			return
 
-	default:
-		answer := fmt.Sprintf("Unrecognized request '%s'.\n")
-		log.Printf(answer)
-		conn.Write([]byte(answer))
+		default:
+			answer := fmt.Sprintf("Unrecognized request '%s'.\n")
+			log.Printf(answer)
+			conn.Write([]byte(answer))
+		}
 	}
 }

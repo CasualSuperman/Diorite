@@ -79,7 +79,7 @@ func getMultiverseData() ([]byte, time.Time, error) {
 	}
 
 	var b bytes.Buffer
-	multiverse.Write(&b)
+	err = multiverse.Write(&b)
 	multiverseDL := b.Bytes()
 	b.Reset()
 	multiverseMod := multiverse.Modified

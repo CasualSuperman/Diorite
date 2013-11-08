@@ -55,7 +55,8 @@ func main() {
 	} else {
 		log.Println("Downloading online multiverse.")
 	}
-	mostRecentUpdate, err := onlineModifiedAt()
+
+	server, err := connectToServer()
 
 	if err != nil {
 		log.Println(err)
@@ -63,10 +64,9 @@ func main() {
 			log.Fatalln("No local multiverse available, and unable to download copy. Unable to continue.")
 		}
 		log.Println("Warning: Online database unavailable. Your card index may be out of date.")
-	}
-
-	if mostRecentUpdate.After(multiverse.Modified) {
+	} else if server.Modified().After(multiverse.Modified) {
 		var saveTo io.Writer
+
 		if canSaveMultiverse {
 			saveTo, err = os.Create(MultiverseFileName)
 			if err != nil {
@@ -74,8 +74,10 @@ func main() {
 				saveTo = nil
 			}
 		}
+
 		log.Println("Multiverse update available! Downloading now.")
-		newM, err := downloadMultiverse(saveTo)
+		newM, err := server.DownloadMultiverse(saveTo)
+
 		if err != nil {
 			log.Printf("Error downloading: %s\n", err)
 			if !multiverseLoaded {
@@ -83,11 +85,15 @@ func main() {
 			}
 			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		} else {
+			log.Println("Multiverse downloaded!")
+			log.Println("Cards in multiverse:", newM.Cards.List.Len())
 			multiverse = newM
 		}
 	} else {
 		log.Println("No updates available.")
 	}
+
+	server.Close()
 
 	cards := multiverse.FuzzyNameSearch("aetherling", 15)
 

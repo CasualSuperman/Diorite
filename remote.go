@@ -12,39 +12,40 @@ import (
 const remoteDBLocation = "diorite.casualsuperman.com:5050"
 const lastModifiedFormat = time.RFC1123
 
-func onlineModifiedAt() (time.Time, error) {
-	conn, err := net.Dial("tcp", remoteDBLocation)
-
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	conn.Write([]byte("multiverseMod\n"))
-
-	s := bufio.NewScanner(conn)
-	s.Scan()
-	t := s.Text()
-	conn.Close()
-
-	return time.Parse(lastModifiedFormat, t)
+type serverConnection struct {
+	net.Conn
 }
 
-func downloadMultiverse(saveTo io.Writer) (mv m.Multiverse, err error) {
-	var conn io.Reader
-	netConn, err := net.Dial("tcp", remoteDBLocation)
-	conn = netConn
+func (s serverConnection) Modified() time.Time {
+	s.Write([]byte("multiverseMod\n"))
 
-	if err != nil {
-		return
-	}
+	scan := bufio.NewScanner(s)
+	scan.Scan()
+	t := scan.Text()
 
-	defer netConn.Close()
+	tim, _ := time.Parse(lastModifiedFormat, t)
 
-	netConn.Write([]byte("multiverseDL\n"))
+	return tim
+}
+
+func connectToServer() (serverConnection, error) {
+	conn, err := net.Dial("tcp", remoteDBLocation)
+	return serverConnection{conn}, err
+}
+
+func (s serverConnection) DownloadMultiverse(saveTo io.Writer) (mv m.Multiverse, err error) {
+	var conn io.Reader = s
 
 	if saveTo != nil {
-		conn = io.TeeReader(netConn, saveTo)
+		conn = io.TeeReader(s, saveTo)
 	}
 
+	s.Write([]byte("multiverseDL\n"))
+
 	return m.Read(conn)
+}
+
+func (s serverConnection) Close() {
+	s.Write([]byte("close\n"))
+	s.Conn.Close()
 }

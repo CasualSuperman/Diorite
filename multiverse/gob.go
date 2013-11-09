@@ -222,5 +222,7 @@ func Read(r io.Reader) (m Multiverse, err error) {
 		mDec.Modified,
 	}
 
+	m.initialize()
+
 	return m, nil
 }

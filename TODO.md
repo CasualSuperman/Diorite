@@ -6,7 +6,7 @@ TODO
 	* GTK
 	* QT
 	* Web with embedded browser
-* Finish set legality filters.
+* ~~Finish set legality filters.~~
 * Finish other filters.
 * ~~Get a ban list/restricted list in a downloadable format.~~
     * ~~searchthecity.me can do this! We should probably set up a service to ping their data occassionally and host it locally, since they don't send modified headers.~~

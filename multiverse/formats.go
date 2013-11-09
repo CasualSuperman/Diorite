@@ -77,11 +77,11 @@ func modernSetLegal(s *Set) bool {
 }
 
 func extendedSetLegal(s *Set) bool {
-	return true
+	return s.extendedLegal
 }
 
 func standardSetLegal(s *Set) bool {
-	return true
+	return s.standardLegal
 }
 
 func (f *Format) Ok(c *Card) (bool, error) {

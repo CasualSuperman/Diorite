@@ -54,13 +54,15 @@ type Multiverse struct {
 
 // Set is a Magic: The Gathering set, such as Innistrad or Zendikar.
 type Set struct {
-	Name     string
-	Code     string
-	Released time.Time
-	Border   BorderColor
-	Type     SetType
-	Block    string
-	Cards    []MultiverseID
+	Name          string
+	Code          string
+	Released      time.Time
+	Border        BorderColor
+	Type          SetType
+	Block         string
+	Cards         []MultiverseID
+	standardLegal bool
+	extendedLegal bool
 }
 
 // Card is a Magic: The Gathering card, such as Ætherling or Blightning.
@@ -110,4 +112,8 @@ func (c *Card) IsCreature() bool {
 		}
 	}
 	return false
+}
+
+func (s SetType) IsTournamentLegal() bool {
+	return s == SetTypes.Expansion || s == SetTypes.Core
 }

@@ -32,13 +32,13 @@ func getRestrictedList(format string) ([]string, error) {
 }
 
 func paginateSTS(list, format string) ([]string, error) {
-	baseUrl := "http://searchthecity.me/api?q=" + list + "%3A" + format + "&p="
+	baseURL := "http://searchthecity.me/api?q=" + list + "%3A" + format + "&p="
 	var cards []string
 	var page = stsJSON{Pagination: &stsPagination{CurrentPage: 0, TotalPages: 1}}
 	i := 0
 
 	for page.Pagination.CurrentPage < page.Pagination.TotalPages {
-		url := baseUrl + strconv.Itoa(page.Pagination.CurrentPage+1)
+		url := baseURL + strconv.Itoa(page.Pagination.CurrentPage+1)
 		resp, err := http.Get(url)
 		if err != nil {
 			return nil, err

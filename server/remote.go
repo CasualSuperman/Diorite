@@ -55,7 +55,7 @@ func getMultiverseData() ([]byte, time.Time, error) {
 		if banned, err := getBannedList(format.Name); err == nil {
 			for _, name := range banned {
 				for i := range multiverse.Cards.List {
-					var card *m.Card = multiverse.Cards.List[i].Card
+					card := multiverse.Cards.List[i].Card
 					if card.Name == name {
 						card.Banned = append(card.Banned, format)
 						break
@@ -68,7 +68,7 @@ func getMultiverseData() ([]byte, time.Time, error) {
 		if restricted, err := getRestrictedList(format.Name); err == nil {
 			for _, name := range restricted {
 				for i := range multiverse.Cards.List {
-					var card *m.Card = multiverse.Cards.List[i].Card
+					card := multiverse.Cards.List[i].Card
 					if card.Name == name {
 						card.Restricted = append(card.Restricted, format)
 						break

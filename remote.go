@@ -9,7 +9,8 @@ import (
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
-const remoteDBLocation = "diorite.casualsuperman.com:5050"
+const serverPort = ":5050"
+const remoteDBServer = "diorite.casualsuperman.com"
 const lastModifiedFormat = time.RFC1123
 
 type serverConnection struct {
@@ -28,16 +29,26 @@ func (s serverConnection) Modified() time.Time {
 	return tim
 }
 
-func connectToServer() (serverConnection, error) {
-	conn, err := net.Dial("tcp", remoteDBLocation)
+func connectToLocalServer() (serverConnection, error) {
+	return connectToServer("localhost")
+}
+
+func connectToDefaultServer() (serverConnection, error) {
+	return connectToServer(remoteDBServer)
+}
+
+func connectToServer(addr string) (serverConnection, error) {
+	conn, err := net.Dial("tcp", addr+serverPort)
 	return serverConnection{conn}, err
 }
 
 func (s serverConnection) DownloadMultiverse(saveTo io.Writer) (mv m.Multiverse, err error) {
-	var conn io.Reader = s
+	var conn io.Reader
 
 	if saveTo != nil {
 		conn = io.TeeReader(s, saveTo)
+	} else {
+		conn = s
 	}
 
 	s.Write([]byte("multiverseDL\n"))

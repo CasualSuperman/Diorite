@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -11,7 +12,10 @@ import (
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
+var local = flag.Bool("local", false, "Connect to a server running on localhost.")
+
 func main() {
+	flag.Parse()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	canSaveMultiverse := true
@@ -56,7 +60,13 @@ func main() {
 		log.Println("Downloading online multiverse.")
 	}
 
-	server, err := connectToServer()
+	var server serverConnection
+
+	if *local {
+		server, err = connectToLocalServer()
+	} else {
+		server, err = connectToDefaultServer()
+	}
 
 	if err != nil {
 		log.Println(err)
@@ -89,11 +99,11 @@ func main() {
 			log.Println("Cards in multiverse:", newM.Cards.List.Len())
 			multiverse = newM
 		}
+		server.Close()
 	} else {
 		log.Println("No updates available.")
+		server.Close()
 	}
-
-	server.Close()
 
 	cards := multiverse.FuzzyNameSearch("aetherling", 15)
 

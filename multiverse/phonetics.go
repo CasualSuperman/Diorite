@@ -109,7 +109,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 
 	groups := runtime.GOMAXPROCS(-1)
 
-	totalCards := m.Cards.List.Len()
+	totalCards := m.Cards.Len()
 	groupInterval := totalCards / groups
 
 	searchPhrase = preventUnicode(searchPhrase)
@@ -132,11 +132,11 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 
 			go func(searchTerm, searchMetaphone string, start, end int) {
 				defer done.Done()
-				cards := m.Cards.List[start:end]
+				cards := m.Cards[start:end]
 				for cardIndex := range cards {
 					card := cards[cardIndex]
-					name := card.Ascii
-					metaphones := card.Metaphones
+					name := card.ascii
+					metaphones := card.metaphones
 
 					if name == searchPhrase {
 						aggregator.Add(cardIndex+start, int(^uint(0)>>1))
@@ -180,7 +180,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	results := make([]*Card, count)
 
 	for i, card := range aggregator.data {
-		results[i] = m.Cards.List[card.index].Card
+		results[i] = &m.Cards[card.index]
 	}
 
 	return results

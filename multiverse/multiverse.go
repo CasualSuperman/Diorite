@@ -63,53 +63,46 @@ func markExtendedSets(sets []*Set) {
 	}
 }
 
-func (m Multiverse) Card(id int) *Card {
-	return m.Cards.List[id].Card
+func (m Multiverse) Card(id int) Card {
+	return m.Cards[id]
 }
 
-type CardList []scrubbedCard
+type CardList []Card
 
-func (c *CardList) Add(candidate *Card) int {
+func (c *CardList) Add(candidate Card) int {
 	for i, card := range *c {
-		if card.Card == candidate {
+		if card.Name == candidate.Name {
 			return i
 		}
 	}
 
-	*c = append(*c, scrubbedCard{
-		candidate,
-		preventUnicode(candidate.Name),
-		nil,
-	})
+	candidate.scrub()
 
-	i := len(*c) - 1
+	i := len(*c)
 
-	for _, str := range Split((*c)[i].Ascii) {
-		(*c)[i].Metaphones = append((*c)[i].Metaphones, metaphone.Encode(str))
+	if cap(*c) > i {
+		*c = (*c)[:i+1]
+	} else {
+		newC := make(CardList, i+1, (i+1)*2)
+		copy(newC, *c)
+		*c = newC
 	}
+	(*c)[i] = candidate
 
 	return i
 }
 
-func (c *CardList) Len() int {
-	return len(*c)
+func (c CardList) Len() int {
+	return len(c)
 }
 
-type scrubbedCard struct {
-	Card       *Card
-	Ascii      string
-	Metaphones []string
-}
+func (c *Card) scrub() {
+	c.ascii = preventUnicode(c.Name)
 
-func (c CardList) scrub() {
-	for i := range c {
-		c[i].Ascii = preventUnicode(c[i].Card.Name)
+	words := Split(c.ascii)
+	c.metaphones = make([]string, len(words))
 
-		words := Split(c[i].Ascii)
-		c[i].Metaphones = make([]string, len(words))
-
-		for j, str := range Split(c[i].Ascii) {
-			c[i].Metaphones[j] = metaphone.Encode(str)
-		}
+	for j, str := range Split(c.ascii) {
+		c.metaphones[j] = metaphone.Encode(str)
 	}
 }

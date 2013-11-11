@@ -6,17 +6,10 @@ import (
 	"time"
 
 	"code.google.com/p/lzma"
-	"github.com/glenn-brown/skiplist"
 )
-
-type skipListElem struct {
-	ID        MultiverseID
-	CardIndex int32
-}
 
 type gobMutiverse struct {
 	Sets     []*Set
-	Cards    []skipListElem
 	CardList []gobCard
 	Modified time.Time
 }
@@ -55,7 +48,7 @@ type gobPrinting struct {
 	Rarity Rarity
 }
 
-func (g *gobCard) card(sets []*Set) *Card {
+func (g *gobCard) card(sets []*Set) Card {
 	var c Card
 
 	c.Name = g.Name
@@ -103,7 +96,7 @@ func (g *gobCard) card(sets []*Set) *Card {
 		}
 	}
 
-	return &c
+	return c
 }
 
 func (c *Card) gobCard(sets []*Set) gobCard {
@@ -158,20 +151,14 @@ func (m Multiverse) Write(w io.Writer) error {
 
 // WriteCompressLevel writes the multiverse to the provided writer with the given level of compression.
 func (m Multiverse) WriteCompressLevel(w io.Writer, compressionLevel int) error {
-	encCards := make([]skipListElem, m.Cards.Printings.Len())
-	rawCards := make([]gobCard, len(m.Cards.List))
+	rawCards := make([]gobCard, len(m.Cards))
 
-	for i, node := 0, m.Cards.Printings.Front(); node != nil; i, node = i+1, node.Next() {
-		encCards[i] = skipListElem{MultiverseID(node.Key().(int)), int32(node.Value.(int))}
-	}
-
-	for i, card := range m.Cards.List {
-		rawCards[i] = card.Card.gobCard(m.Sets)
+	for i, card := range m.Cards {
+		rawCards[i] = card.gobCard(m.Sets)
 	}
 
 	mEnc := gobMutiverse{
 		m.Sets,
-		encCards,
 		rawCards,
 		m.Modified,
 	}
@@ -199,26 +186,15 @@ func Read(r io.Reader) (m Multiverse, err error) {
 		return
 	}
 
-	decCards := skiplist.New()
-
-	for _, elem := range mDec.Cards {
-		decCards.Insert(int(elem.ID), int(elem.CardIndex))
-	}
-
-	scrubbedCardList := make(CardList, len(mDec.CardList))
+	cardList := make(CardList, len(mDec.CardList))
 	for i := range mDec.CardList {
-		scrubbedCardList[i].Card = mDec.CardList[i].card(mDec.Sets)
+		cardList[i] = mDec.CardList[i].card(mDec.Sets)
+		cardList[i].scrub()
 	}
-	scrubbedCardList.scrub()
-
-	var cards = struct {
-		Printings *skiplist.T
-		List      CardList
-	}{decCards, scrubbedCardList}
 
 	m = Multiverse{
 		mDec.Sets,
-		cards,
+		cardList,
 		mDec.Modified,
 	}
 

@@ -11,7 +11,7 @@ func openTestingMultiverse() Multiverse {
 	file, _ := os.Open("/home/rwertman/.diorite/multiverse.mtg")
 	m, _ := Read(file)
 
-	m.Initialize()
+	m.initialize()
 	return m
 }
 

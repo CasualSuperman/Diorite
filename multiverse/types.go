@@ -2,8 +2,6 @@ package multiverse
 
 import (
 	"time"
-
-	"github.com/glenn-brown/skiplist"
 )
 
 // ManaColor is a bitmask of possible Mana Colors.
@@ -21,34 +19,11 @@ type MultiverseID int32
 // SetType indicates the various set types.
 type SetType byte
 
-// The colors of mana that exist in the Multiverse.
-var ManaColors = struct {
-	Colorless, White, Blue, Black, Red, Green ManaColor
-}{0, 1, 2, 4, 8, 16}
-
-// The borders that cards have.
-var BorderColors = struct {
-	White, Black, Silver BorderColor
-}{1, 2, 3}
-
-// Rarities of cards.
-var Rarities = struct {
-	Common, Uncommon, Rare, Mythic, Basic, Special Rarity
-}{1, 2, 3, 4, 5, 6}
-
-// Set types.
-var SetTypes = struct {
-	Core, Expansion, Reprint, Box, Un, FromTheVault, PremiumDeck, DuelDeck, Starter, Commander, Planechase, Archenemy SetType
-}{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
-
 // Multiverse is an entire Magic: The Gathering multiverse.
 // It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
 type Multiverse struct {
-	Sets  []*Set
-	Cards struct {
-		Printings *skiplist.T
-		List      CardList
-	}
+	Sets     []*Set
+	Cards    CardList
 	Modified time.Time
 }
 
@@ -67,10 +42,12 @@ type Set struct {
 
 // Card is a Magic: The Gathering card, such as Ætherling or Blightning.
 type Card struct {
-	Name   string
-	Cmc    float32
-	Cost   string
-	Colors ManaColor
+	Name       string
+	ascii      string
+	metaphones []string
+	Cmc        float32
+	Cost       string
+	Colors     ManaColor
 
 	Supertypes, Types []string
 

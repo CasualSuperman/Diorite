@@ -26,7 +26,7 @@ type Filter interface {
 }
 
 func (m Multiverse) Search(f Filter) ([]*Card, error) {
-	c := m.Cards.List
+	c := m.Cards
 	cores := runtime.GOMAXPROCS(-1)
 	sectionLen := c.Len() / cores
 
@@ -44,14 +44,14 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 		}
 
 		go func(start, end int) {
-			for _, card := range c[start:end] {
-				ok, err := f.Ok(card.Card)
+			for j := range c[start:end] {
+				ok, err := f.Ok(&c[j+start])
 				if err != nil {
 					errChan <- err
 					return
 				}
 				if ok {
-					cardChan <- card.Card
+					cardChan <- &c[j+start]
 				}
 			}
 			doneChan <- true

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
-	"github.com/glenn-brown/skiplist"
 )
 
 type jsonRuling struct {
@@ -64,7 +63,7 @@ type onlineMultiverse struct {
 
 func getCardIndex(cardList m.CardList, cardName string) int {
 	for i, card := range cardList {
-		if card.Card.Name == cardName {
+		if card.Name == cardName {
 			return i
 		}
 	}
@@ -91,7 +90,6 @@ func (s setSorter) Less(i, j int) bool {
 // Convert to a Multiverse.
 func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 	mv.Sets = make([]*m.Set, 0, len(om.Sets))
-	mv.Cards.Printings = skiplist.New()
 	mv.Modified = om.Modified
 
 	for _, set := range om.Sets {
@@ -139,18 +137,17 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 				rarity,
 			}
 
-			index := getCardIndex(mv.Cards.List, card.Name)
+			index := getCardIndex(mv.Cards, card.Name)
 			if index == -1 {
-				index = len(mv.Cards.List)
+				index = len(mv.Cards)
 				c := new(m.Card)
 				copyCardFields(&card, c)
 				c.Printings = append(c.Printings, printing)
-				mv.Cards.List.Add(c)
+				mv.Cards.Add(*c)
 			} else {
-				c := mv.Cards.List[index].Card
+				c := &mv.Cards[index]
 				c.Printings = append(c.Printings, printing)
 			}
-			mv.Cards.Printings.Insert(card.MultiverseID, index)
 		}
 	}
 

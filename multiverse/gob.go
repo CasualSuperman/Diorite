@@ -153,6 +153,11 @@ func (c *Card) gobCard(sets []*Set) gobCard {
 
 // Write the multiverse to the provided writer.
 func (m Multiverse) Write(w io.Writer) error {
+	return m.WriteCompressLevel(w, lzma.DefaultCompression)
+}
+
+// WriteCompressLevel writes the multiverse to the provided writer with the given level of compression.
+func (m Multiverse) WriteCompressLevel(w io.Writer, compressionLevel int) error {
 	encCards := make([]skipListElem, m.Cards.Printings.Len())
 	rawCards := make([]gobCard, len(m.Cards.List))
 
@@ -171,17 +176,12 @@ func (m Multiverse) Write(w io.Writer) error {
 		m.Modified,
 	}
 
-	lw := lzma.NewWriter(w)
+	lw := lzma.NewWriterLevel(w, compressionLevel)
+	defer lw.Close()
+
 	enc := gob.NewEncoder(lw)
-	err := enc.Encode(mEnc)
 
-	if err != nil {
-		return err
-	}
-
-	lw.Close()
-
-	return nil
+	return enc.Encode(mEnc)
 }
 
 // Read the multiverse from the provided reader.

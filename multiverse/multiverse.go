@@ -99,10 +99,10 @@ func (c CardList) Len() int {
 func (c *Card) scrub() {
 	c.ascii = preventUnicode(c.Name)
 
-	words := Split(c.ascii)
+	words := split(c.ascii)
 	c.metaphones = make([]string, len(words))
 
-	for j, str := range Split(c.ascii) {
+	for j, str := range split(c.ascii) {
 		c.metaphones[j] = metaphone.Encode(str)
 	}
 }

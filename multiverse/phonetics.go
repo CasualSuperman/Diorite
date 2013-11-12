@@ -116,7 +116,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 	searchGrams2 := ngram.New(searchPhrase, 2)
 	searchGrams3 := ngram.New(searchPhrase, 3)
 
-	for _, searchTerm := range Split(searchPhrase) {
+	for _, searchTerm := range split(searchPhrase) {
 		if len(searchTerm) == 0 {
 			continue
 		}

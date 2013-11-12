@@ -19,6 +19,19 @@ type MultiverseID int32
 // SetType indicates the various set types.
 type SetType byte
 
+// Printing represents a specific printing of a card, Cancel from M10 is different from Cancel from M11.
+type Printing struct {
+	ID     MultiverseID
+	Set    *Set
+	Rarity Rarity
+}
+
+// Ruling is a ruling made by a judge that can clarify difficult situations that may arise.
+type Ruling struct {
+	Date time.Time
+	Text string
+}
+
 // Multiverse is an entire Magic: The Gathering multiverse.
 // It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
 type Multiverse struct {
@@ -67,18 +80,6 @@ type Card struct {
 	Printings []Printing
 
 	Restricted, Banned []*Format
-}
-
-type Printing struct {
-	ID     MultiverseID
-	Set    *Set
-	Rarity Rarity
-}
-
-// Ruling is a ruling made by a judge that can clarify difficult situations that may arise.
-type Ruling struct {
-	Date time.Time
-	Text string
 }
 
 // IsCreature is a convenience method that returns if the card is a creature.

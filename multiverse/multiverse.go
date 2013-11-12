@@ -63,12 +63,10 @@ func markExtendedSets(sets []*Set) {
 	}
 }
 
-func (m Multiverse) Card(id int) Card {
-	return m.Cards[id]
-}
-
+// CardList is a list of cards.
 type CardList []Card
 
+// Add a card to the list, unless it's already in the list. Returns the card's position in the list.
 func (c *CardList) Add(candidate Card) int {
 	for i, card := range *c {
 		if card.Name == candidate.Name {
@@ -92,6 +90,7 @@ func (c *CardList) Add(candidate Card) int {
 	return i
 }
 
+// Len is the length of the CardList.
 func (c CardList) Len() int {
 	return len(c)
 }

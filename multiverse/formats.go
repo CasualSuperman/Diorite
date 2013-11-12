@@ -4,43 +4,6 @@ import (
 	"time"
 )
 
-// block, classic, commander ?
-
-func init() {
-	Formats.List = []*Format{
-		Formats.Standard,
-		Formats.Extended,
-		Formats.Modern,
-		Formats.Vintage,
-		Formats.Legacy,
-	}
-}
-
-type Format struct {
-	SetOk func(*Set) bool
-	Name  string
-}
-
-type unrecognizedFormatErr string
-
-func (err unrecognizedFormatErr) Error() string {
-	return "unrecognized format: " + string(err)
-}
-
-func (f *Format) GobDecode(name []byte) error {
-	for _, format := range Formats.List {
-		if format.Name == string(name) {
-			*f = *format
-			return nil
-		}
-	}
-	return unrecognizedFormatErr(string(name))
-}
-
-func (f *Format) GobEncode() ([]byte, error) {
-	return []byte(f.Name), nil
-}
-
 // The deck formats we know about. (Standard, Extended, Modern, etc.)
 var Formats = struct {
 	Standard, Extended, Modern, Vintage, Legacy, Un *Format
@@ -55,6 +18,46 @@ var Formats = struct {
 	&Format{unSet, "un"},
 
 	nil,
+}
+
+// block, classic, commander ?
+
+func init() {
+	Formats.List = []*Format{
+		Formats.Standard,
+		Formats.Extended,
+		Formats.Modern,
+		Formats.Vintage,
+		Formats.Legacy,
+	}
+}
+
+// Format represents a sanctioned Magic the Gathering format.
+type Format struct {
+	SetOk func(*Set) bool
+	Name  string
+}
+
+type unrecognizedFormatErr string
+
+func (err unrecognizedFormatErr) Error() string {
+	return "unrecognized format: " + string(err)
+}
+
+// GobDecode allows a Format to be restored using the encoding/gob package.
+func (f *Format) GobDecode(name []byte) error {
+	for _, format := range Formats.List {
+		if format.Name == string(name) {
+			*f = *format
+			return nil
+		}
+	}
+	return unrecognizedFormatErr(string(name))
+}
+
+// GobEncode allows a Format to be saveed using the encoding/gob package.
+func (f *Format) GobEncode() ([]byte, error) {
+	return []byte(f.Name), nil
 }
 
 func unSet(s *Set) bool {
@@ -84,6 +87,7 @@ func standardSetLegal(s *Set) bool {
 	return s.standardLegal
 }
 
+// Ok allows Formats to also act as a Filter for searching.
 func (f *Format) Ok(c *Card) (bool, error) {
 	for _, format := range c.Restricted {
 		if format == f {

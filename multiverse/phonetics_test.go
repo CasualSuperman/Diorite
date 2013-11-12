@@ -1,19 +1,8 @@
 package multiverse
 
 import (
-	"os"
-	//"runtime"
-	//"sync"
 	"testing"
 )
-
-func openTestingMultiverse() Multiverse {
-	file, _ := os.Open("/home/rwertman/.diorite/multiverse.mtg")
-	m, _ := Read(file)
-
-	m.initialize()
-	return m
-}
 
 /*
 func TestNameIsResult(t *testing.T) {
@@ -43,8 +32,9 @@ func TestNameIsResult(t *testing.T) {
 	wait.Wait()
 }
 */
+
 func TestPhoneticCorrection(t *testing.T) {
-	m := openTestingMultiverse()
+	m := getTestingMultiverse(t)
 
 	if results := m.FuzzyNameSearch("asheok", 1); results[0].Name != "Ashiok, Nightmare Weaver" {
 		t.Errorf("Searching for 'asheok' should return Ashiok, Nightmare Weaver. Got: %s\n", results[0].Name)
@@ -52,7 +42,7 @@ func TestPhoneticCorrection(t *testing.T) {
 }
 
 func BenchmarkSingleWordFuzzyNameSearch(b *testing.B) {
-	m := openTestingMultiverse()
+	m := getTestingMultiverse(nil)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -61,7 +51,7 @@ func BenchmarkSingleWordFuzzyNameSearch(b *testing.B) {
 }
 
 func BenchmarkMultiplePartialWordFuzzyNameSearch(b *testing.B) {
-	m := openTestingMultiverse()
+	m := getTestingMultiverse(nil)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -70,7 +60,7 @@ func BenchmarkMultiplePartialWordFuzzyNameSearch(b *testing.B) {
 }
 
 func BenchmarkSingleLetterFuzzyNameSearch(b *testing.B) {
-	m := openTestingMultiverse()
+	m := getTestingMultiverse(nil)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -79,7 +69,7 @@ func BenchmarkSingleLetterFuzzyNameSearch(b *testing.B) {
 }
 
 func BenchmarkFullNameFuzzyNameSearch(b *testing.B) {
-	m := openTestingMultiverse()
+	m := getTestingMultiverse(nil)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {

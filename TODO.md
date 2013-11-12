@@ -17,3 +17,7 @@ TODO
     * Confirm the storage locations for OSX and Windows are correct.
 * Rewrite the gob info to not require custom types, just use GobEncoders and GobDecoders for special types.
 * Unify all the []Card and []*Cards hanging out in various places.
+* Check our pointer usage in various locations.
+    * Diorite/Multiverse.Sets
+	* Diorite/Multiverse.Cardlist.Add
+	* Others? Go hunting!

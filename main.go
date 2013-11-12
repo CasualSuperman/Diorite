@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"os"
 	"runtime"
+	"runtime/pprof"
+	"strings"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
@@ -16,7 +17,7 @@ var local = flag.Bool("local", false, "Connect to a server running on localhost.
 
 func main() {
 	flag.Parse()
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU() * 8)
 
 	canSaveMultiverse := true
 	multiverseLoaded := false
@@ -96,7 +97,7 @@ func main() {
 			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		} else {
 			log.Println("Multiverse downloaded!")
-			log.Println("Cards in multiverse:", newM.Cards.List.Len())
+			log.Println("Cards in multiverse:", newM.Cards.Len())
 			multiverse = newM
 		}
 		server.Close()
@@ -105,20 +106,66 @@ func main() {
 		server.Close()
 	}
 
-	cards := multiverse.FuzzyNameSearch("aetherling", 15)
+	searchbench, _ := os.Create("searchbench")
+	pprof.StartCPUProfile(searchbench)
+	for i := 0; i < 1000; i++ {
+		multiverse.Search(m.Formats.Standard)
+		multiverse.Search(
+			m.And{
+				m.ManaColors.Blue,
+				m.Or{
+					m.ManaColors.Green,
+					m.ManaColors.Black,
+				},
+				m.Not{
+					m.Or{
+						m.ManaColors.White,
+						m.ManaColors.Red,
+					},
+				},
+			})
+	}
+	pprof.StopCPUProfile()
 
-	names := make([]string, len(cards))
-	for i, card := range cards {
-		names[i] = card.Name
-		fmt.Println(card.Name)
-
-		if math.IsNaN(float64(card.Toughness.Val)) {
-			if card.IsCreature() {
-				fmt.Println(card.Toughness.Original)
+	printedIn := func(setName string) m.Filter {
+		return m.Func(func(c *m.Card) bool {
+			for _, printing := range c.Printings {
+				if printing.Set.Name == setName {
+					return true
+				}
 			}
-		} else {
-			fmt.Println(card.Toughness.Val)
+			return false
+		})
+	}
+
+	_ = printedIn
+
+	hasText := func(text string) m.Filter {
+		text = strings.ToLower(text)
+		return m.Func(func(c *m.Card) bool {
+			return strings.Contains(strings.ToLower(c.Text), text)
+		})
+	}
+
+	cards, err := multiverse.Search(
+		m.And{
+			m.Formats.Standard,
+			hasText("life"),
+			printedIn("Theros"),
+			m.Or{
+				m.ManaColors.White,
+				m.ManaColors.Green,
+				m.ManaColors.Black,
+			},
+		})
+
+	if err != nil {
+		fmt.Printf("Error! %s\n", err.Error())
+	} else {
+		results := cards.Sort(m.Sorts.Cmc)
+		fmt.Printf("%d Results\n", len(results))
+		for _, card := range results {
+			fmt.Printf("%s\t%s\n=====\n%s\n\n\n\n", card.Name, card.Cost, card.Text)
 		}
 	}
-	fmt.Println(names)
 }

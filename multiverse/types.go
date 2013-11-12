@@ -91,6 +91,6 @@ func (c *Card) IsCreature() bool {
 	return false
 }
 
-func (s SetType) IsTournamentLegal() bool {
+func (s SetType) isTournamentLegal() bool {
 	return s == SetTypes.Expansion || s == SetTypes.Core
 }

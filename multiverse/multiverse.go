@@ -13,7 +13,7 @@ func (m Multiverse) initialize() {
 func markStandardSets(sets []*Set) {
 	i := 0
 
-	for !sets[i].Type.IsTournamentLegal() {
+	for !sets[i].Type.isTournamentLegal() {
 		i++
 	}
 
@@ -29,7 +29,7 @@ func markStandardSets(sets []*Set) {
 	i = 0
 
 	for coresInStandard > 0 || sets[i].Type != SetTypes.Core {
-		if sets[i].Type.IsTournamentLegal() {
+		if sets[i].Type.isTournamentLegal() {
 			sets[i].standardLegal = true
 
 			if sets[i].Type == SetTypes.Core {
@@ -44,7 +44,7 @@ func markStandardSets(sets []*Set) {
 func markExtendedSets(sets []*Set) {
 	i := 0
 
-	for !sets[i].Type.IsTournamentLegal() {
+	for !sets[i].Type.isTournamentLegal() {
 		i++
 	}
 
@@ -55,7 +55,7 @@ func markExtendedSets(sets []*Set) {
 	i = 0
 
 	for sets[i].Released.After(releaseCutoff) {
-		if sets[i].Type.IsTournamentLegal() {
+		if sets[i].Type.isTournamentLegal() {
 			sets[i].extendedLegal = true
 		}
 

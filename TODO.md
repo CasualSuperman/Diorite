@@ -21,3 +21,4 @@ TODO
     * Diorite/Multiverse.Sets
 	* Diorite/Multiverse.Cardlist.Add
 	* Others? Go hunting!
+* Rewrite server multiverse downloading to be more parallel and detect differences in banlists.

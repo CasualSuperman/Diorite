@@ -30,7 +30,7 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 	cores := runtime.GOMAXPROCS(-1)
 	sectionLen := c.Len() / cores
 
-	cardChan := make(chan *Card, cores*16)
+	cardChan := make(chan *Card, 16*cores)
 	doneChan := make(chan bool)
 	errChan := make(chan error)
 	list := make([]*Card, 0, 1)
@@ -58,6 +58,22 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 		}(start, end)
 	}
 
+	finishChans := func() {
+		for cores > 0 {
+			select {
+			case <-cardChan:
+			case <-errChan:
+				cores--
+			case <-doneChan:
+				cores--
+			}
+		}
+
+		close(cardChan)
+		close(errChan)
+		close(doneChan)
+	}
+
 	for cores > 0 {
 		select {
 		case <-doneChan:
@@ -65,21 +81,24 @@ func (m Multiverse) Search(f Filter) ([]*Card, error) {
 		case c := <-cardChan:
 			appendNonDuplicateToCardList(&list, c)
 		case err := <-errChan:
+			cores--
+			go finishChans()
 			return nil, err
 		}
 	}
 
-	for len(cardChan) > 0 {
-		c := <-cardChan
+	close(cardChan)
+	close(errChan)
+	close(doneChan)
+
+	for c := range cardChan {
 		appendNonDuplicateToCardList(&list, c)
 
 	}
 
 	shortList := make([]*Card, len(list))
 
-	for i, card := range list {
-		shortList[i] = card
-	}
+	copy(shortList, list)
 
 	return shortList, nil
 }

@@ -22,8 +22,6 @@ type gobCard struct {
 
 	Supertypes, Types []string
 
-	Rarity Rarity
-
 	Text   string
 	Flavor string
 

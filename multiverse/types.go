@@ -82,16 +82,6 @@ type Card struct {
 	Restricted, Banned []*Format
 }
 
-// IsCreature is a convenience method that returns if the card is a creature.
-func (c *Card) IsCreature() bool {
-	for _, supertype := range c.Supertypes {
-		if supertype == "Creature" {
-			return true
-		}
-	}
-	return false
-}
-
 func (s SetType) isTournamentLegal() bool {
 	return s == SetTypes.Expansion || s == SetTypes.Core
 }

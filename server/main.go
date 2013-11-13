@@ -99,6 +99,7 @@ func provideDownload(conn net.Conn, done bool) {
 
 	defer func() {
 		if done {
+			log.Println("Exiting after single connection.")
 			os.Exit(0)
 		}
 	}()

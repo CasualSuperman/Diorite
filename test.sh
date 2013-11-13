@@ -1,6 +1,6 @@
 go test ./multiverse
-go build ./server
-go build
+go build -o server.bin ./server
+go build -o diorite.bin
 
-./server/server -travis &
-./Diorite -local
+./server.bin -travis &
+./diorite.bin -local

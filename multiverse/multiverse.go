@@ -74,6 +74,11 @@ func (c *CardList) Add(candidate Card) int {
 		}
 	}
 
+	return c.AddNew(candidate)
+}
+
+// AddNew adds a new card to the list. Returns the card's position in the list.
+func (c *CardList) AddNew(candidate Card) int {
 	candidate.scrub()
 
 	i := len(*c)

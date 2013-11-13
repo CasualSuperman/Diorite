@@ -35,7 +35,7 @@ type Ruling struct {
 // Multiverse is an entire Magic: The Gathering multiverse.
 // It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
 type Multiverse struct {
-	Sets     []*Set
+	Sets     []Set
 	Cards    CardList
 	Modified time.Time
 }

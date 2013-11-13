@@ -68,8 +68,8 @@ func copyCardFields(jc *jsonCard, c *m.Card) {
 	}
 }
 
-func setFromJSON(js jsonSet) *m.Set {
-	s := &m.Set{
+func setFromJSON(js jsonSet) m.Set {
+	s := m.Set{
 		Name:  js.Name,
 		Code:  js.Code,
 		Block: js.Block,

@@ -10,7 +10,7 @@ func (m Multiverse) initialize() {
 	markExtendedSets(m.Sets)
 }
 
-func markStandardSets(sets []*Set) {
+func markStandardSets(sets []Set) {
 	i := 0
 
 	for !sets[i].Type.isTournamentLegal() {
@@ -41,7 +41,7 @@ func markStandardSets(sets []*Set) {
 	}
 }
 
-func markExtendedSets(sets []*Set) {
+func markExtendedSets(sets []Set) {
 	i := 0
 
 	for !sets[i].Type.isTournamentLegal() {

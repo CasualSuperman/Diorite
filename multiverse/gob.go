@@ -9,7 +9,7 @@ import (
 )
 
 type gobMutiverse struct {
-	Sets     []*Set
+	Sets     []Set
 	CardList []gobCard
 	Modified time.Time
 }
@@ -48,7 +48,7 @@ type gobPrinting struct {
 	Rarity Rarity
 }
 
-func (g *gobCard) card(sets []*Set) Card {
+func (g *gobCard) card(sets []Set) Card {
 	var c Card
 
 	c.Name = g.Name
@@ -75,7 +75,7 @@ func (g *gobCard) card(sets []*Set) Card {
 	for j, printing := range g.Prints {
 		c.Printings[j].Rarity = printing.Rarity
 		c.Printings[j].ID = printing.ID
-		c.Printings[j].Set = sets[printing.Set]
+		c.Printings[j].Set = &sets[printing.Set]
 	}
 
 	for _, format := range g.Restricted {
@@ -99,7 +99,7 @@ func (g *gobCard) card(sets []*Set) Card {
 	return c
 }
 
-func (c *Card) gobCard(sets []*Set) gobCard {
+func (c *Card) gobCard(sets []Set) gobCard {
 	var g gobCard
 
 	g.Name = c.Name
@@ -130,9 +130,9 @@ func (c *Card) gobCard(sets []*Set) gobCard {
 		g.Banned = append(g.Banned, format.Name)
 	}
 
-	for i, set := range sets {
+	for i := range sets {
 		for j, printing := range c.Printings {
-			if printing.Set == set {
+			if printing.Set == &sets[i] {
 				g.Prints[j].Rarity = printing.Rarity
 				g.Prints[j].ID = printing.ID
 				g.Prints[j].Set = i

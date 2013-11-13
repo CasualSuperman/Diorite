@@ -71,7 +71,7 @@ func getCardIndex(cardList m.CardList, cardName string) int {
 }
 
 type setSorter struct {
-	sets []*m.Set
+	sets []m.Set
 	by   func(s1, s2 *m.Set) bool
 }
 
@@ -84,17 +84,19 @@ func (s setSorter) Swap(i, j int) {
 }
 
 func (s setSorter) Less(i, j int) bool {
-	return s.by(s.sets[i], s.sets[j])
+	return s.by(&s.sets[i], &s.sets[j])
 }
 
 // Convert to a Multiverse.
 func (om onlineMultiverse) Convert() (mv m.Multiverse) {
-	mv.Sets = make([]*m.Set, 0, len(om.Sets))
+	mv.Sets = make([]m.Set, len(om.Sets))
 	mv.Modified = om.Modified
 
+	i := 0
+
 	for _, set := range om.Sets {
-		mSet := setFromJSON(set)
-		mv.Sets = append(mv.Sets, mSet)
+		mv.Sets[i] = setFromJSON(set)
+		i++
 	}
 
 	s := setSorter{
@@ -133,7 +135,7 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 
 			var printing = m.Printing{
 				m.MultiverseID(card.MultiverseID),
-				mv.Sets[setIndex],
+				&mv.Sets[setIndex],
 				rarity,
 			}
 

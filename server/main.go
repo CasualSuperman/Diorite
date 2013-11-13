@@ -6,16 +6,22 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"sync"
 	"time"
 )
 
 var port = flag.String("port", ":5050", "The port to run the server on.")
+var test = flag.Bool("travis", false, "Exit after a single download for testing.")
 
 var multiverseDL []byte
 var multiverseModified time.Time
+var multiverseReady sync.RWMutex
 
 func main() {
-	go updateMultiverse()
+	flag.Parse()
+	multiverseReady.Lock()
+	go updateMultiverse(&multiverseReady)
 
 	log.Println("Starting query server.")
 
@@ -31,17 +37,19 @@ func main() {
 		if err != nil {
 			log.Printf("Error accepting connection: %s\n", err)
 		} else {
-			go provideDownload(conn)
+			go provideDownload(conn, *test)
 		}
 	}
 }
 
-func updateMultiverse() {
+func updateMultiverse(lock *sync.RWMutex) {
 	var err error
 
 	log.Println("Downloading multiverse.")
 
 	multiverseDL, multiverseModified, err = getMultiverseData()
+
+	lock.Unlock()
 
 	if err != nil {
 		log.Println("Error!", err.Error())
@@ -77,12 +85,23 @@ func updateMultiverse() {
 
 		log.Println("Update applied.")
 
+		lock.Lock()
 		multiverseDL, multiverseModified = newData, newMod
+		lock.Unlock()
 	}
 }
 
-func provideDownload(conn net.Conn) {
+func provideDownload(conn net.Conn, done bool) {
 	s := bufio.NewScanner(conn)
+
+	multiverseReady.RLock()
+	defer multiverseReady.RUnlock()
+
+	defer func() {
+		if done {
+			os.Exit(0)
+		}
+	}()
 
 	for s.Scan() {
 		switch text := s.Text(); text {

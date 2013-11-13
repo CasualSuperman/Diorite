@@ -3,7 +3,6 @@ package multiverse
 import (
 	"fmt"
 	"runtime"
-	"sort"
 	"strings"
 )
 
@@ -38,37 +37,23 @@ func (f Func) Ok(c *Card) (bool, error) {
 	return f(c), nil
 }
 
-type searchResults []*Card
-
-// Sort the results based on the given comparison.
-func (s searchResults) Sort(f Comparison) searchResults {
-	sortable := sortResults{
-		s,
-		f,
-	}
-
-	sort.Sort(sortable)
-
-	return sortable.cards
-}
-
 // Search for cards that match the given conditions.
-func (m Multiverse) Search(f Filter) (searchResults, error) {
+func (m Multiverse) Search(f Filter) (CardList, error) {
 	c := m.Cards
 	cores := runtime.GOMAXPROCS(-1)
-	sectionLen := c.Len() / cores
+	sectionLen := len(c) / cores
 
 	cardChan := make(chan *Card, 16*cores)
 	doneChan := make(chan bool)
 	errChan := make(chan error)
-	list := make(searchResults, 0, 1)
+	list := make(CardList, 0, 1)
 
 	for i := 0; i < cores; i++ {
 		start := sectionLen * i
 		end := start + sectionLen
 
 		if i == cores-1 {
-			end = c.Len()
+			end = len(c)
 		}
 
 		go func(start, end int) {
@@ -107,7 +92,7 @@ func (m Multiverse) Search(f Filter) (searchResults, error) {
 		case <-doneChan:
 			cores--
 		case c := <-cardChan:
-			appendNonDuplicateToCardList(&list, c)
+			list.add(c)
 		case err := <-errChan:
 			cores--
 			go finishChans()
@@ -120,36 +105,12 @@ func (m Multiverse) Search(f Filter) (searchResults, error) {
 	close(doneChan)
 
 	for c := range cardChan {
-		appendNonDuplicateToCardList(&list, c)
-
+		list.add(c)
 	}
 
-	shortList := make(searchResults, len(list))
+	list.trim()
 
-	copy(shortList, list)
-
-	return shortList, nil
-}
-
-func appendToCardList(list *searchResults, c *Card) {
-	for _, card := range *list {
-		if card == c {
-			return
-		}
-	}
-	appendNonDuplicateToCardList(list, c)
-}
-
-func appendNonDuplicateToCardList(list *searchResults, c *Card) {
-	l := len(*list)
-	if l < cap(*list) {
-		*list = (*list)[:l+1]
-	} else {
-		newList := make([]*Card, l+1, l*2)
-		copy(newList, *list)
-		*list = newList
-	}
-	(*list)[l] = c
+	return list, nil
 }
 
 // Not allows us to search for exclusive conditions.

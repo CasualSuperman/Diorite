@@ -97,7 +97,7 @@ func main() {
 			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		} else {
 			log.Println("Multiverse downloaded!")
-			log.Println("Cards in multiverse:", newM.Cards.Len())
+			log.Println("Cards in multiverse:", len(newM.Cards))
 			multiverse = newM
 		}
 		server.Close()
@@ -162,9 +162,9 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error! %s\n", err.Error())
 	} else {
-		results := cards.Sort(m.Sorts.Cmc)
-		fmt.Printf("%d Results\n", len(results))
-		for _, card := range results {
+		cards.Sort(m.Sorts.Cmc)
+		fmt.Printf("%d Results\n", len(cards))
+		for _, card := range cards {
 			fmt.Printf("%s\t%s\n=====\n%s\n\n\n\n", card.Name, card.Cost, card.Text)
 		}
 	}

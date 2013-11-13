@@ -103,13 +103,13 @@ func (f *fuzzySearchList) Add(index int, similarity int) {
 }
 
 // FuzzyNameSearch searches for a card with a similar name to the searchPhrase, and returns count or less of the most likely results.
-func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
+func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) CardList {
 	var done sync.WaitGroup
 	aggregator := newFuzzySearchList(count)
 
 	groups := runtime.GOMAXPROCS(-1)
 
-	totalCards := m.Cards.Len()
+	totalCards := len(m.Cards)
 	groupInterval := totalCards / groups
 
 	searchPhrase = preventUnicode(searchPhrase)
@@ -177,7 +177,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) []*Card {
 		count = len(aggregator.data)
 	}
 
-	results := make([]*Card, count)
+	results := make(CardList, count)
 
 	for i, card := range aggregator.data {
 		results[i] = &m.Cards[card.index]

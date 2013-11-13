@@ -8,6 +8,9 @@ import (
 func (m Multiverse) initialize() {
 	markStandardSets(m.Sets)
 	markExtendedSets(m.Sets)
+	for i := range m.Cards {
+		m.Cards[i].scrub()
+	}
 }
 
 func markStandardSets(sets []Set) {
@@ -61,43 +64,6 @@ func markExtendedSets(sets []Set) {
 
 		i++
 	}
-}
-
-// CardList is a list of cards.
-type CardList []Card
-
-// Add a card to the list, unless it's already in the list. Returns the card's position in the list.
-func (c *CardList) Add(candidate Card) int {
-	for i, card := range *c {
-		if card.Name == candidate.Name {
-			return i
-		}
-	}
-
-	return c.AddNew(candidate)
-}
-
-// AddNew adds a new card to the list. Returns the card's position in the list.
-func (c *CardList) AddNew(candidate Card) int {
-	candidate.scrub()
-
-	i := len(*c)
-
-	if cap(*c) > i {
-		*c = (*c)[:i+1]
-	} else {
-		newC := make(CardList, i+1, (i+1)*2)
-		copy(newC, *c)
-		*c = newC
-	}
-	(*c)[i] = candidate
-
-	return i
-}
-
-// Len is the length of the CardList.
-func (c CardList) Len() int {
-	return len(c)
 }
 
 func (c *Card) scrub() {

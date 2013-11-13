@@ -36,7 +36,7 @@ type Ruling struct {
 // It contains the available cards, sets, formats, and legality information, as well as ways to interpret, manipulate, and filter that data.
 type Multiverse struct {
 	Sets     []Set
-	Cards    CardList
+	Cards    []Card
 	Modified time.Time
 }
 

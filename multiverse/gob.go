@@ -10,7 +10,7 @@ import (
 
 type gobMutiverse struct {
 	Sets     []Set
-	CardList []gobCard
+	Cards    []gobCard
 	Modified time.Time
 }
 
@@ -184,9 +184,9 @@ func Read(r io.Reader) (m Multiverse, err error) {
 		return
 	}
 
-	cardList := make(CardList, len(mDec.CardList))
-	for i := range mDec.CardList {
-		cardList[i] = mDec.CardList[i].card(mDec.Sets)
+	cardList := make([]Card, len(mDec.Cards))
+	for i := range mDec.Cards {
+		cardList[i] = mDec.Cards[i].card(mDec.Sets)
 		cardList[i].scrub()
 	}
 

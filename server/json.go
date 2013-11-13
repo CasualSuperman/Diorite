@@ -61,7 +61,7 @@ type onlineMultiverse struct {
 	Modified time.Time
 }
 
-func getCardIndex(cardList m.CardList, cardName string) int {
+func getCardIndex(cardList []m.Card, cardName string) int {
 	for i, card := range cardList {
 		if card.Name == cardName {
 			return i
@@ -145,7 +145,7 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 				c := new(m.Card)
 				copyCardFields(&card, c)
 				c.Printings = append(c.Printings, printing)
-				mv.Cards.Add(*c)
+				mv.Cards = append(mv.Cards, *c)
 			} else {
 				c := &mv.Cards[index]
 				c.Printings = append(c.Printings, printing)

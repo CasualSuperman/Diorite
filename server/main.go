@@ -112,6 +112,10 @@ func doDownload(done *sync.WaitGroup) {
 			}
 		}
 
+		downloadModified = time.Now()
+		multiverseUpdate := multiverse.Modified
+		multiverse.Modified = downloadModified
+
 		log.Println("Finalizing multiverse payload.")
 		var b bytes.Buffer
 		err := multiverse.Write(&b)
@@ -121,7 +125,7 @@ func doDownload(done *sync.WaitGroup) {
 		}
 
 		downloadData = b.Bytes()
-		downloadModified = time.Now()
+		multiverse.Modified = multiverseUpdate
 
 		b.Reset()
 	}

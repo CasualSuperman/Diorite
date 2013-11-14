@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sort"
 	"time"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
@@ -61,15 +60,6 @@ type onlineMultiverse struct {
 	Modified time.Time
 }
 
-func getCardIndex(cardList []m.Card, cardName string) int {
-	for i, card := range cardList {
-		if card.Name == cardName {
-			return i
-		}
-	}
-	return -1
-}
-
 type setSorter struct {
 	sets []m.Set
 	by   func(s1, s2 *m.Set) bool
@@ -85,75 +75,6 @@ func (s setSorter) Swap(i, j int) {
 
 func (s setSorter) Less(i, j int) bool {
 	return s.by(&s.sets[i], &s.sets[j])
-}
-
-// Convert to a Multiverse.
-func (om onlineMultiverse) Convert() (mv m.Multiverse) {
-	mv.Sets = make([]m.Set, len(om.Sets))
-	mv.Modified = om.Modified
-
-	i := 0
-
-	for _, set := range om.Sets {
-		mv.Sets[i] = setFromJSON(set)
-		i++
-	}
-
-	s := setSorter{
-		mv.Sets,
-		releaseDateSort,
-	}
-
-	sort.Sort(s)
-
-	for _, set := range om.Sets {
-		var setIndex int
-
-		for i, s := range mv.Sets {
-			if s.Name == set.Name {
-				setIndex = i
-				break
-			}
-		}
-
-		for _, card := range set.Cards {
-			var rarity m.Rarity
-			switch card.Rarity {
-			case "Common":
-				rarity = m.Rarities.Common
-			case "Uncommon":
-				rarity = m.Rarities.Uncommon
-			case "Rare":
-				rarity = m.Rarities.Rare
-			case "Mythic Rare":
-				rarity = m.Rarities.Mythic
-			case "Special":
-				rarity = m.Rarities.Special
-			case "Basic Land":
-				rarity = m.Rarities.Basic
-			}
-
-			var printing = m.Printing{
-				m.MultiverseID(card.MultiverseID),
-				&mv.Sets[setIndex],
-				rarity,
-			}
-
-			index := getCardIndex(mv.Cards, card.Name)
-			if index == -1 {
-				index = len(mv.Cards)
-				c := new(m.Card)
-				copyCardFields(&card, c)
-				c.Printings = append(c.Printings, printing)
-				mv.Cards = append(mv.Cards, *c)
-			} else {
-				c := &mv.Cards[index]
-				c.Printings = append(c.Printings, printing)
-			}
-		}
-	}
-
-	return
 }
 
 func releaseDateSort(s1, s2 *m.Set) bool {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+       "sort"
 	"strconv"
 	"time"
 
@@ -10,7 +11,92 @@ import (
 
 const setReleaseFormat = "2006-01-02"
 
-func copyCardFields(jc *jsonCard, c *m.Card) {
+// Convert to a Multiverse.
+func (om onlineMultiverse) Convert() (mv m.Multiverse) {
+       mv.Sets = make([]m.Set, len(om.Sets))
+       mv.Modified = om.Modified
+
+       i := 0
+
+       for _, jSet := range om.Sets {
+               mv.Sets[i] = jSet.Set()
+               i++
+       }
+
+       s := setSorter{
+               mv.Sets,
+               releaseDateSort,
+       }
+
+       sort.Sort(s)
+
+       cardIndexCache := make(map[string]int)
+
+       for _, set := range om.Sets {
+               var setIndex int
+
+               for i, s := range mv.Sets {
+                       if s.Name == set.Name {
+                               setIndex = i
+                               break
+                       }
+               }
+
+               for _, jCard := range set.Cards {
+                       var rarity m.Rarity
+                       switch jCard.Rarity {
+                       case "Common":
+                               rarity = m.Rarities.Common
+                       case "Uncommon":
+                               rarity = m.Rarities.Uncommon
+                       case "Rare":
+                               rarity = m.Rarities.Rare
+                       case "Mythic Rare":
+                               rarity = m.Rarities.Mythic
+                       case "Special":
+                               rarity = m.Rarities.Special
+                       case "Basic Land":
+                               rarity = m.Rarities.Basic
+                       }
+
+                       var printing = m.Printing{
+                               m.MultiverseID(jCard.MultiverseID),
+                               &mv.Sets[setIndex],
+                               rarity,
+                       }
+
+                       index, ok := cardIndexCache[jCard.Name]
+
+                       if ok {
+                               jCard := &mv.Cards[index]
+                               jCard.Printings = append(jCard.Printings, printing)
+                       } else {
+                               c := jCard.Card()
+                               c.Printings = []m.Printing{printing}
+                               i := len(mv.Cards)
+                               cardIndexCache[jCard.Name] = i
+
+                               if i < cap(mv.Cards) {
+                                       mv.Cards = mv.Cards[:i+1]
+                               } else {
+                                       newCards := make([]m.Card, i+1, (i+1)*2)
+                                       copy(newCards, mv.Cards)
+                                       mv.Cards = newCards
+                               }
+                               mv.Cards[i] = *c
+                       }
+               }
+       }
+
+       newCards := make([]m.Card, len(mv.Cards))
+       copy(newCards, mv.Cards)
+       mv.Cards = newCards
+
+       return
+}
+
+func (jc *jsonCard) Card() *m.Card {
+       c := new(m.Card)
 	c.Name = jc.Name
 	c.Cmc = jc.Cmc
 	c.Cost = jc.ManaCost
@@ -66,9 +152,11 @@ func copyCardFields(jc *jsonCard, c *m.Card) {
 			c.Toughness.Original = jc.Toughness
 		}
 	}
+
+       return c
 }
 
-func setFromJSON(js jsonSet) m.Set {
+func (js *jsonSet) Set() m.Set {
 	s := m.Set{
 		Name:  js.Name,
 		Code:  js.Code,

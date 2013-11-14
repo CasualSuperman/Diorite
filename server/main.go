@@ -2,27 +2,145 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"runtime"
 	"sync"
 	"time"
+
+	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
 var port = flag.String("port", ":5050", "The port to run the server on.")
 var test = flag.Bool("travis", false, "Exit after a single download for testing.")
 
-var multiverseDL []byte
-var multiverseModified time.Time
-var multiverseReady sync.RWMutex
+var multiverse m.Multiverse
+
+var banlist []formatList
+var banlistHash uint64
+var banlistModified time.Time
+
+var downloadData []byte
+var downloadModified time.Time
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU() * 8)
 	flag.Parse()
-	multiverseReady.Lock()
-	go updateMultiverse(&multiverseReady)
 
+	var initialDownloadComplete sync.WaitGroup
+
+	initialDownloadComplete.Add(1)
+
+	go doDownload(&initialDownloadComplete)
+
+	go watchForUpdates()
+
+	handleConnections(&initialDownloadComplete)
+}
+
+func doDownload(done *sync.WaitGroup) {
+	defer done.Done()
+	multiverseChan := make(chan m.Multiverse)
+	banlistChan := make(chan formatList, len(m.Formats.List))
+	errChan := make(chan error)
+	updates := false
+
+	go getFormatLists(banlistChan, errChan)
+
+	if mod, err := onlineModifiedAt(); err == nil && mod.After(multiverse.Modified) {
+		go getMultiverse(multiverseChan, errChan)
+
+		select {
+		case newMultiverse := <-multiverseChan:
+			if multiverse.Modified.IsZero() || newMultiverse.Modified.After(multiverse.Modified) {
+				multiverse = newMultiverse
+				updates = true
+			}
+		case err := <-errChan:
+			log.Fatal(err.Error())
+		}
+	} else if err != nil {
+		log.Fatal(err.Error())
+	} else {
+		log.Println("Multiverse up to date.")
+	}
+
+	formats := make([]formatList, len(m.Formats.List))
+	formatsLeft := len(formats)
+
+	for formatsLeft > 0 {
+		select {
+		case format := <-banlistChan:
+			for i, f := range m.Formats.List {
+				if f == format.Format {
+					formats[i] = format
+					formatsLeft--
+				}
+			}
+		case err := <-errChan:
+			log.Fatal(err.Error())
+		}
+	}
+
+	hash := generateFormatsHash(formats)
+
+	if hash != banlistHash {
+		updates = true
+		banlistHash = hash
+		banlistModified = time.Now()
+	} else {
+		log.Println("Banned/restricted card list up to date.")
+	}
+
+	if updates {
+		log.Println("Clearing banlists.")
+		clearBanlists()
+
+		log.Println("Marking banned/restricted cards.")
+		for i, card := range multiverse.Cards {
+			for _, formatList := range formats {
+				if formatList.Banned[card.Name] {
+					multiverse.Cards[i].Banned = append(multiverse.Cards[i].Banned, formatList.Format)
+				}
+				if formatList.Restricted[card.Name] {
+					multiverse.Cards[i].Restricted = append(multiverse.Cards[i].Restricted, formatList.Format)
+				}
+			}
+		}
+
+		log.Println("Finalizing multiverse payload.")
+		var b bytes.Buffer
+		err := multiverse.Write(&b)
+
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+
+		downloadData = b.Bytes()
+		downloadModified = time.Now()
+
+		b.Reset()
+	}
+
+	log.Println("Multiverse ready.")
+}
+
+func watchForUpdates() {
+	updateTick := time.Tick(time.Hour * 12)
+	var unused sync.WaitGroup
+
+	for {
+		unused.Add(1)
+		<-updateTick
+		doDownload(&unused)
+	}
+}
+
+func handleConnections(ready *sync.WaitGroup) {
 	log.Println("Starting query server.")
 
 	ln, err := net.Listen("tcp", *port)
@@ -37,65 +155,13 @@ func main() {
 		if err != nil {
 			log.Printf("Error accepting connection: %s\n", err)
 		} else {
-			go provideDownload(conn, *test)
+			go provideDownload(conn, *test, ready)
 		}
 	}
 }
 
-func updateMultiverse(lock *sync.RWMutex) {
-	var err error
-
-	log.Println("Downloading multiverse.")
-
-	multiverseDL, multiverseModified, err = getMultiverseData()
-
-	lock.Unlock()
-
-	if err != nil {
-		log.Println("Error!", err.Error())
-		log.Fatalln("Unable to download multiverse.")
-	}
-
-	log.Println("Multiverse downloaded.")
-
-	dailyUpdate := time.Tick(time.Hour * 12)
-
-	for {
-		<-dailyUpdate
-		log.Println("Checking for update.")
-		mod, err := onlineModifiedAt()
-
-		if mod == multiverseModified {
-			log.Println("Multiverse up-to-date.")
-			continue
-		}
-
-		if err != nil {
-			continue
-		}
-
-		log.Println("Update found! Downloading...")
-
-		newData, newMod, err := getMultiverseData()
-
-		if err != nil {
-			log.Println("Error getting multiverse data:", err.Error())
-			continue
-		}
-
-		log.Println("Update applied.")
-
-		lock.Lock()
-		multiverseDL, multiverseModified = newData, newMod
-		lock.Unlock()
-	}
-}
-
-func provideDownload(conn net.Conn, done bool) {
+func provideDownload(conn net.Conn, done bool, ready *sync.WaitGroup) {
 	s := bufio.NewScanner(conn)
-
-	multiverseReady.RLock()
-	defer multiverseReady.RUnlock()
 
 	defer func() {
 		if done {
@@ -104,16 +170,18 @@ func provideDownload(conn net.Conn, done bool) {
 		}
 	}()
 
+	ready.Wait()
+
 	for s.Scan() {
 		switch text := s.Text(); text {
 		// We want to know the modification time of the multiverse.
 		case "multiverseMod":
-			conn.Write([]byte(multiverseModified.Format(lastModifiedFormat) + "\n"))
+			conn.Write([]byte(downloadModified.Format(lastModifiedFormat) + "\n"))
 			log.Println("Timestamp accessed.")
 
 		// We want to download the multiverse.
 		case "multiverseDL":
-			conn.Write(multiverseDL)
+			conn.Write(downloadData)
 			log.Println("Multiverse downloaded.")
 
 		// We're done, close the connection.

@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"runtime/pprof"
 	"strings"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
@@ -106,66 +105,7 @@ func main() {
 		server.Close()
 	}
 
-	searchbench, _ := os.Create("searchbench")
-	pprof.StartCPUProfile(searchbench)
-	for i := 0; i < 1000; i++ {
-		multiverse.Search(m.Formats.Standard)
-		multiverse.Search(
-			m.And{
-				m.ManaColors.Blue,
-				m.Or{
-					m.ManaColors.Green,
-					m.ManaColors.Black,
-				},
-				m.Not{
-					m.Or{
-						m.ManaColors.White,
-						m.ManaColors.Red,
-					},
-				},
-			})
-	}
-	pprof.StopCPUProfile()
-
-	printedIn := func(setName string) m.Filter {
-		return m.Func(func(c *m.Card) bool {
-			for _, printing := range c.Printings {
-				if printing.Set.Name == setName {
-					return true
-				}
-			}
-			return false
-		})
-	}
-
-	_ = printedIn
-
-	hasText := func(text string) m.Filter {
-		text = strings.ToLower(text)
-		return m.Func(func(c *m.Card) bool {
-			return strings.Contains(strings.ToLower(c.Text), text)
-		})
-	}
-
-	cards, err := multiverse.Search(
-		m.And{
-			m.Formats.Standard,
-			hasText("life"),
-			printedIn("Theros"),
-			m.Or{
-				m.ManaColors.White,
-				m.ManaColors.Green,
-				m.ManaColors.Black,
-			},
-		})
-
-	if err != nil {
-		fmt.Printf("Error! %s\n", err.Error())
-	} else {
-		cards.Sort(m.Sorts.Cmc)
-		fmt.Printf("%d Results\n", len(cards))
-		for _, card := range cards {
-			fmt.Printf("%s\t%s\n=====\n%s\n\n\n\n", card.Name, card.Cost, card.Text)
-		}
+	if len(os.Args) > 1 {
+		fmt.Printf("%+v\n", multiverse.FuzzyNameSearch(strings.Join(os.Args[1:], " "), 1)[0])
 	}
 }

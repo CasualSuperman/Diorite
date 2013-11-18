@@ -24,3 +24,4 @@ TODO
 * ~~Rewrite server multiverse downloading to be more parallel and detect differences in banlists.~~
 * Add supertypes back in to cards.
 * Create enums for supertypes and types.
+* Add a pretty print method for cards.

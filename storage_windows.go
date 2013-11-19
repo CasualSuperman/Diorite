@@ -2,9 +2,10 @@ package main
 
 import (
 	"os"
+	"strings"
 )
 
 func init() {
-	StorageDir = os.ExpandEnv("${APPDATA}/CasualSuperman/Diorite/")
-	MultiverseFileName = StorageDir + "multiverse.mtg"
+	StorageDir = strings.Join([]string{os.ExpandEnv("${APPDATA}"), "CasualSuperman", "Diorite"}, string(os.PathSeparator))
+	MultiverseFileName = StorageDir + string(os.PathSeparator) + "multiverse.mtg"
 }

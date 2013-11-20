@@ -1,13 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"runtime"
-	"strings"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
@@ -18,94 +17,149 @@ func main() {
 	flag.Parse()
 	runtime.GOMAXPROCS(runtime.NumCPU() * 8)
 
-	canSaveMultiverse := true
-	multiverseLoaded := false
+	var multiverse m.Multiverse
 
+	multiverseDirAvailable := makeStorageDir()
+
+	if multiverseDirAvailable {
+		multiverse = loadMultiverse()
+	}
+
+	multiverse = downloadUpdates(multiverse)
+
+	if !multiverse.Loaded() {
+		os.Exit(1)
+	}
+
+	log.Println("Cards in multiverse:", len(multiverse.Cards))
+
+	searchTerm := ""
+	for i := 1; i < len(os.Args); i++ {
+		if os.Args[i][0] != '-' {
+			if len(searchTerm) > 0 {
+				searchTerm += " "
+			}
+			searchTerm += os.Args[i]
+		}
+	}
+
+	if len(searchTerm) > 0 {
+		card := multiverse.FuzzyNameSearch(searchTerm, 1)
+		if len(card) > 0 {
+			fmt.Println(card[0])
+		}
+	}
+}
+
+func loadLocalMultiverse(location string) (m.Multiverse, error) {
+	multiverseFile, err := os.Open(location)
+	defer multiverseFile.Close()
+
+	if err != nil {
+		return m.Multiverse{}, err
+	}
+
+	return m.Read(multiverseFile)
+}
+
+func connectToServer() (serverConnection, error) {
+	if *local {
+		return connectToLocalServer()
+	} else {
+		return connectToDefaultServer()
+	}
+}
+
+func makeStorageDir() bool {
 	err := os.MkdirAll(StorageDir, os.ModePerm|os.ModeDir)
 
 	if err != nil {
 		log.Println("Unable to create application storage directory. Multiverse will not be saved.")
-		canSaveMultiverse = false
 	}
 
-	var multiverse m.Multiverse
+	return err == nil
+}
 
-	if canSaveMultiverse {
-		multiverseFile, err := os.Open(MultiverseFileName)
+func loadMultiverse() m.Multiverse {
+	log.Println("Loading local multiverse.")
 
-		if err != nil {
-			if os.IsNotExist(err) || os.IsPermission(err) {
-				log.Println("No local database available. A local copy will be downloaded.")
-			} else {
-				log.Fatalln(err)
-			}
+	multiverse, err := loadLocalMultiverse(MultiverseFileName)
+
+	if err != nil {
+		if os.IsNotExist(err) || os.IsPermission(err) {
+			log.Println("No local database available. A local copy will be downloaded.")
 		} else {
-			log.Println("Loading local multiverse.")
-			multiverse, err = m.Read(multiverseFile)
-			multiverseFile.Close()
-
-			if err != nil {
-				log.Printf("Unable to load multiverse: %s\n", err)
-			} else {
-				log.Println("Multiverse loaded.")
-				multiverseLoaded = true
-			}
+			log.Printf("Unable to load multiverse: %s\n", err)
 		}
-
+	} else {
+		log.Println("Multiverse loaded.")
 	}
 
-	if multiverseLoaded {
+	return multiverse
+}
+
+func downloadUpdates(multiverse m.Multiverse) m.Multiverse {
+	log.Println("Contacting update server.")
+
+	server, err := connectToServer()
+
+	if err != nil {
+		if !multiverse.Loaded() {
+			log.Println("No local multiverse available, and unable to download copy. Unable to continue.")
+		} else {
+			log.Println("Warning: Online database unavailable. Your card index may be out of date.")
+		}
+		return multiverse
+	}
+
+	defer server.Close()
+
+	if multiverse.Loaded() {
 		log.Println("Checking for multiverse updates.")
 	} else {
 		log.Println("Downloading online multiverse.")
 	}
 
-	var server serverConnection
-
-	if *local {
-		server, err = connectToLocalServer()
-	} else {
-		server, err = connectToDefaultServer()
+	if multiverse.Loaded() && !server.Modified().After(multiverse.Modified) {
+		log.Println("No updates found.")
+		return multiverse
 	}
+
+	log.Println("Updates available. Downloading.")
+
+	data := server.RawMultiverse()
+	buf := bytes.NewBuffer(data)
+
+	saveTo, err := os.Create(MultiverseFileName)
 
 	if err != nil {
-		log.Println(err)
-		if multiverseLoaded == false {
-			log.Fatalln("No local multiverse available, and unable to download copy. Unable to continue.")
-		}
-		log.Println("Warning: Online database unavailable. Your card index may be out of date.")
-	} else if server.Modified().After(multiverse.Modified) {
-		var saveTo io.Writer
-
-		if canSaveMultiverse {
-			saveTo, err = os.Create(MultiverseFileName)
-			if err != nil {
-				log.Println("Unable to save update to multiverse. Continuing, but it will be redownloaded on next startup.")
-				saveTo = nil
-			}
-		}
-
-		log.Println("Multiverse update available! Downloading now.")
-		newM, err := server.DownloadMultiverse(saveTo)
-
-		if err != nil {
-			log.Printf("Error downloading: %s\n", err)
-			if !multiverseLoaded {
-				log.Fatalln("Downloading multiverse failed and no local database available. Unable to continue.")
-			}
-			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
-		} else {
-			log.Println("Multiverse downloaded!")
-			log.Println("Cards in multiverse:", len(newM.Cards))
-			multiverse = newM
-		}
-		server.Close()
+		log.Println("Unable to save update to multiverse. Continuing, but it will be redownloaded on next startup.")
 	} else {
-		log.Println("No updates available.")
-		server.Close()
+		_, err := saveTo.Write(data)
+		if err != nil && multiverse.Loaded() {
+			log.Println("Error saving multiverse. Rolling back changes.")
+			saveTo.Truncate(0)
+			multiverse.Write(saveTo)
+			saveTo.Close()
+		} else if err != nil {
+			log.Println("Error saving Multiverse. Removing.")
+			saveTo.Close()
+			os.Remove(MultiverseFileName)
+		}
 	}
 
-	if len(os.Args) > 1 {
-		fmt.Printf("%+v\n", multiverse.FuzzyNameSearch(strings.Join(os.Args[1:], " "), 1)[0])
+	newM, err := m.Read(buf)
+
+	if err != nil {
+		log.Printf("Error updating: %s\n", err)
+		if !multiverse.Loaded() {
+			log.Println("Downloading multiverse failed and no local database available. Unable to continue.")
+		} else {
+			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
+		}
+	} else {
+		log.Println("Multiverse downloaded!")
+		return newM
 	}
+	return multiverse
 }

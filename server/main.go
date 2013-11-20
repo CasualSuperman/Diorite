@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/gob"
 	"flag"
 	"fmt"
 	"log"
@@ -182,6 +183,12 @@ func provideDownload(conn net.Conn, done bool, ready *sync.WaitGroup) {
 		case "multiverseMod":
 			conn.Write([]byte(downloadModified.Format(lastModifiedFormat) + "\n"))
 			log.Println("Timestamp accessed.")
+
+		// Just how big is this multiverse?
+		case "multiverseLen":
+			enc := gob.NewEncoder(conn)
+			enc.Encode(int32(len(downloadData)))
+			log.Println("Multiverse size queried.")
 
 		// We want to download the multiverse.
 		case "multiverseDL":

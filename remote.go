@@ -1,7 +1,8 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
+	"encoding/gob"
 	"io"
 	"net"
 	"time"
@@ -20,26 +21,59 @@ type serverConnection struct {
 func (s serverConnection) Modified() time.Time {
 	s.Write([]byte("multiverseMod\n"))
 
-	scan := bufio.NewScanner(s)
-	scan.Scan()
-	t := scan.Text()
+	t, _ := time.Parse(lastModifiedFormat, s.readLine())
 
-	tim, _ := time.Parse(lastModifiedFormat, t)
-
-	return tim
+	return t
 }
 
 func connectToLocalServer() (serverConnection, error) {
-	return connectToServer("localhost")
+	return connectToGivenServer("localhost")
 }
 
 func connectToDefaultServer() (serverConnection, error) {
-	return connectToServer(remoteDBServer)
+	return connectToGivenServer(remoteDBServer)
 }
 
-func connectToServer(addr string) (serverConnection, error) {
+func connectToGivenServer(addr string) (serverConnection, error) {
 	conn, err := net.Dial("tcp", addr+serverPort)
 	return serverConnection{conn}, err
+}
+
+func (s serverConnection) RawMultiverse() []byte {
+	var l int32
+
+	s.Write([]byte("multiverseLen\n"))
+
+	dec := gob.NewDecoder(s)
+	dec.Decode(&l)
+	data := make([]byte, int(l))
+
+	s.Write([]byte("multiverseDL\n"))
+	num, err := s.Read(data)
+	total := num
+
+	for total < int(l) {
+		dataSegment := data[total:]
+		num, err := s.Read(dataSegment)
+		total += num
+		if err != nil {
+			println("Error:", err.Error())
+			return nil
+		}
+	}
+
+	if total != int(l) {
+		println("Size mismatch")
+		println("Target size:", l)
+		println("Actual size:", num)
+	}
+
+	if err != nil {
+		println("Error:", err.Error())
+		return nil
+	}
+
+	return data
 }
 
 func (s serverConnection) DownloadMultiverse(saveTo io.Writer) (mv m.Multiverse, err error) {
@@ -59,4 +93,19 @@ func (s serverConnection) DownloadMultiverse(saveTo io.Writer) (mv m.Multiverse,
 func (s serverConnection) Close() {
 	s.Write([]byte("close\n"))
 	s.Conn.Close()
+}
+
+func (s serverConnection) readLine() string {
+	var char [1]byte
+	var buf bytes.Buffer
+
+	defer buf.Reset()
+
+	s.Read(char[:])
+	for char[0] != '\n' {
+		buf.WriteByte(char[0])
+		s.Read(char[:])
+	}
+
+	return buf.String()
 }

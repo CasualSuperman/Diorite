@@ -4,6 +4,10 @@ import (
 	"github.com/CasualSuperman/phonetics/metaphone"
 )
 
+func (m Multiverse) Loaded() bool {
+	return !m.Modified.IsZero()
+}
+
 // Initialize the phonetics map for a constructed Multiverse.
 func (m Multiverse) initialize() {
 	markStandardSets(m.Sets)

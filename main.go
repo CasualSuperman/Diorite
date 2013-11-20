@@ -53,11 +53,12 @@ func main() {
 
 func loadLocalMultiverse(location string) (m.Multiverse, error) {
 	multiverseFile, err := os.Open(location)
-	defer multiverseFile.Close()
 
 	if err != nil {
 		return m.Multiverse{}, err
 	}
+
+	defer multiverseFile.Close()
 
 	return m.Read(multiverseFile)
 }

@@ -20,7 +20,9 @@ type gobCard struct {
 	Cost   string
 	Colors ManaColor
 
-	Supertypes, Types []string
+	Supertypes SuperType
+	Types      Type
+	Subtypes   []string
 
 	Text   string
 	Flavor string
@@ -56,6 +58,7 @@ func (g *gobCard) card(sets []Set) Card {
 
 	c.Supertypes = g.Supertypes
 	c.Types = g.Types
+	c.Subtypes = g.Subtypes
 
 	c.Text = g.Text
 	c.Flavor = g.Flavor
@@ -107,6 +110,7 @@ func (c *Card) gobCard(sets []Set) gobCard {
 
 	g.Supertypes = c.Supertypes
 	g.Types = c.Types
+	g.Subtypes = c.Subtypes
 
 	g.Text = c.Text
 	g.Flavor = c.Flavor

@@ -2,7 +2,7 @@ package main
 
 import (
 	"math"
-       "sort"
+	"sort"
 	"strconv"
 	"time"
 
@@ -13,90 +13,90 @@ const setReleaseFormat = "2006-01-02"
 
 // Convert to a Multiverse.
 func (om onlineMultiverse) Convert() (mv m.Multiverse) {
-       mv.Sets = make([]m.Set, len(om.Sets))
-       mv.Modified = om.Modified
+	mv.Sets = make([]m.Set, len(om.Sets))
+	mv.Modified = om.Modified
 
-       i := 0
+	i := 0
 
-       for _, jSet := range om.Sets {
-               mv.Sets[i] = jSet.Set()
-               i++
-       }
+	for _, jSet := range om.Sets {
+		mv.Sets[i] = jSet.Set()
+		i++
+	}
 
-       s := setSorter{
-               mv.Sets,
-               releaseDateSort,
-       }
+	s := setSorter{
+		mv.Sets,
+		releaseDateSort,
+	}
 
-       sort.Sort(s)
+	sort.Sort(s)
 
-       cardIndexCache := make(map[string]int)
+	cardIndexCache := make(map[string]int)
 
-       for _, set := range om.Sets {
-               var setIndex int
+	for _, set := range om.Sets {
+		var setIndex int
 
-               for i, s := range mv.Sets {
-                       if s.Name == set.Name {
-                               setIndex = i
-                               break
-                       }
-               }
+		for i, s := range mv.Sets {
+			if s.Name == set.Name {
+				setIndex = i
+				break
+			}
+		}
 
-               for _, jCard := range set.Cards {
-                       var rarity m.Rarity
-                       switch jCard.Rarity {
-                       case "Common":
-                               rarity = m.Rarities.Common
-                       case "Uncommon":
-                               rarity = m.Rarities.Uncommon
-                       case "Rare":
-                               rarity = m.Rarities.Rare
-                       case "Mythic Rare":
-                               rarity = m.Rarities.Mythic
-                       case "Special":
-                               rarity = m.Rarities.Special
-                       case "Basic Land":
-                               rarity = m.Rarities.Basic
-                       }
+		for _, jCard := range set.Cards {
+			var rarity m.Rarity
+			switch jCard.Rarity {
+			case "Common":
+				rarity = m.Rarities.Common
+			case "Uncommon":
+				rarity = m.Rarities.Uncommon
+			case "Rare":
+				rarity = m.Rarities.Rare
+			case "Mythic Rare":
+				rarity = m.Rarities.Mythic
+			case "Special":
+				rarity = m.Rarities.Special
+			case "Basic Land":
+				rarity = m.Rarities.Basic
+			}
 
-                       var printing = m.Printing{
-                               m.MultiverseID(jCard.MultiverseID),
-                               &mv.Sets[setIndex],
-                               rarity,
-                       }
+			var printing = m.Printing{
+				m.MultiverseID(jCard.MultiverseID),
+				&mv.Sets[setIndex],
+				rarity,
+			}
 
-                       index, ok := cardIndexCache[jCard.Name]
+			index, ok := cardIndexCache[jCard.Name]
 
-                       if ok {
-                               jCard := &mv.Cards[index]
-                               jCard.Printings = append(jCard.Printings, printing)
-                       } else {
-                               c := jCard.Card()
-                               c.Printings = []m.Printing{printing}
-                               i := len(mv.Cards)
-                               cardIndexCache[jCard.Name] = i
+			if ok {
+				jCard := &mv.Cards[index]
+				jCard.Printings = append(jCard.Printings, printing)
+			} else {
+				c := jCard.Card()
+				c.Printings = []m.Printing{printing}
+				i := len(mv.Cards)
+				cardIndexCache[jCard.Name] = i
 
-                               if i < cap(mv.Cards) {
-                                       mv.Cards = mv.Cards[:i+1]
-                               } else {
-                                       newCards := make([]m.Card, i+1, (i+1)*2)
-                                       copy(newCards, mv.Cards)
-                                       mv.Cards = newCards
-                               }
-                               mv.Cards[i] = *c
-                       }
-               }
-       }
+				if i < cap(mv.Cards) {
+					mv.Cards = mv.Cards[:i+1]
+				} else {
+					newCards := make([]m.Card, i+1, (i+1)*2)
+					copy(newCards, mv.Cards)
+					mv.Cards = newCards
+				}
+				mv.Cards[i] = *c
+			}
+		}
+	}
 
-       newCards := make([]m.Card, len(mv.Cards))
-       copy(newCards, mv.Cards)
-       mv.Cards = newCards
+	newCards := make([]m.Card, len(mv.Cards))
+	copy(newCards, mv.Cards)
+	mv.Cards = newCards
 
-       return
+	return
 }
 
 func (jc *jsonCard) Card() *m.Card {
-       c := new(m.Card)
+	c := new(m.Card)
 	c.Name = jc.Name
 	c.Cmc = jc.Cmc
 	c.Cost = jc.ManaCost
@@ -116,8 +116,45 @@ func (jc *jsonCard) Card() *m.Card {
 		}
 	}
 
-	c.Supertypes = append(append(c.Supertypes, jc.Supertypes...), jc.Types...)
-	c.Types = append(c.Types, jc.Subtypes...)
+	for _, SuperType := range jc.Supertypes {
+		switch SuperType {
+		case "Basic":
+			c.Supertypes |= m.SuperTypes.Basic
+		case "Elite":
+			c.Supertypes |= m.SuperTypes.Elite
+		case "Legendary":
+			c.Supertypes |= m.SuperTypes.Legendary
+		case "Ongoing":
+			c.Supertypes |= m.SuperTypes.Ongoing
+		case "Snow":
+			c.Supertypes |= m.SuperTypes.Snow
+		case "World":
+			c.Supertypes |= m.SuperTypes.World
+		}
+	}
+
+	for _, Type := range jc.Types {
+		switch Type {
+		case "Artifact":
+			c.Types |= m.Types.Artifact
+		case "Creature":
+			c.Types |= m.Types.Creature
+		case "Enchantment":
+			c.Types |= m.Types.Enchantment
+		case "Instant":
+			c.Types |= m.Types.Instant
+		case "Land":
+			c.Types |= m.Types.Land
+		case "Planeswalker":
+			c.Types |= m.Types.Planeswalker
+		case "Sorcery":
+			c.Types |= m.Types.Sorcery
+		case "Tribal":
+			c.Types |= m.Types.Tribal
+		}
+	}
+
+	c.Subtypes = jc.Subtypes
 
 	c.Text = jc.Text
 	c.Flavor = jc.Flavor
@@ -153,7 +190,7 @@ func (jc *jsonCard) Card() *m.Card {
 		}
 	}
 
-       return c
+	return c
 }
 
 func (js *jsonSet) Set() m.Set {
@@ -198,7 +235,6 @@ func (js *jsonSet) Set() m.Set {
 		s.Type = m.SetTypes.Planechase
 	case "archenemy":
 		s.Type = m.SetTypes.Archenemy
-
 	}
 
 	s.Cards = make([]m.MultiverseID, len(js.Cards))

@@ -19,6 +19,12 @@ type MultiverseID int32
 // SetType indicates the various set types.
 type SetType byte
 
+// SuperType indicates the various SuperTypes.
+type SuperType byte
+
+// Type indicates the various Types.
+type Type byte
+
 // Printing represents a specific printing of a card, Cancel from M10 is different from Cancel from M11.
 type Printing struct {
 	ID     MultiverseID
@@ -62,7 +68,9 @@ type Card struct {
 	Cost       string
 	Colors     ManaColor
 
-	Supertypes, Types []string
+	Supertypes SuperType
+	Types      Type
+	Subtypes   []string
 
 	Text   string
 	Flavor string

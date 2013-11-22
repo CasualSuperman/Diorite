@@ -24,6 +24,16 @@ func (m ManaColor) Ok(c *Card) (bool, error) {
 	return c.Colors&m != 0, nil
 }
 
+// Ok makes SuperType useable as a Filter.
+func (s SuperType) Ok(c *Card) (bool, error) {
+	return c.Supertypes&s != 0, nil
+}
+
+// Ok makes Type usable as a filter.
+func (t Type) Ok(c *Card) (bool, error) {
+	return c.Types&t != 0, nil
+}
+
 // Filter is a way to search through cards.
 type Filter interface {
 	Ok(*Card) (bool, error)

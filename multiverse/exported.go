@@ -19,3 +19,13 @@ var Rarities = struct {
 var SetTypes = struct {
 	Core, Expansion, Reprint, Box, Un, FromTheVault, PremiumDeck, DuelDeck, Starter, Commander, Planechase, Archenemy SetType
 }{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+
+// SuperType values.
+var SuperTypes = struct {
+	Basic, Elite, Legendary, Ongoing, Snow, World SuperType
+}{32, 16, 8, 4, 2, 1}
+
+// Type values.
+var Types = struct {
+	Artifact, Creature, Enchantment, Instant, Land, Planeswalker, Sorcery, Tribal Type
+}{128, 64, 32, 16, 8, 4, 2, 1}

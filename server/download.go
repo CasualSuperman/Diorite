@@ -40,7 +40,7 @@ func getFormatLists(ret chan formatList, errChan chan error) {
 			}
 
 			var internalGroup sync.WaitGroup
-			internalGroup.Add(2)
+			internalGroup.Add(1)
 
 			go func() {
 				defer internalGroup.Done()
@@ -53,16 +53,19 @@ func getFormatLists(ret chan formatList, errChan chan error) {
 				}
 			}()
 
-			go func() {
-				defer internalGroup.Done()
-				if restricted, err := getRestrictedList(format.Name); err == nil {
-					for _, name := range restricted {
-						list.Restricted[name] = true
+			if format == m.Formats.Vintage {
+				internalGroup.Add(1)
+				go func() {
+					defer internalGroup.Done()
+					if restricted, err := getRestrictedList(format.Name); err == nil {
+						for _, name := range restricted {
+							list.Restricted[name] = true
+						}
+					} else {
+						errChan <- err
 					}
-				} else {
-					errChan <- err
-				}
-			}()
+				}()
+			}
 
 			internalGroup.Wait()
 			ret <- list

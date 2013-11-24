@@ -50,7 +50,15 @@ func doDownload(done *sync.WaitGroup) {
 	errChan := make(chan error)
 	updates := false
 
-	go getFormatLists(banlistChan, errChan)
+	_, _, date := time.Now().Date()
+
+	banListCanBeUpdated := banlistHash == 0 || date == 20 || date == 1
+
+	if banListCanBeUpdated {
+		go getFormatLists(banlistChan, errChan)
+	} else {
+		log.Println("Banlists are only updated on the 20th and are put into effect on the 1st.")
+	}
 
 	if mod, err := onlineModifiedAt(); err == nil && mod.After(multiverse.Modified) {
 		go getMultiverse(multiverseChan, errChan)
@@ -71,30 +79,33 @@ func doDownload(done *sync.WaitGroup) {
 	}
 
 	formats := make([]formatList, len(m.Formats.List))
-	formatsLeft := len(formats)
 
-	for formatsLeft > 0 {
-		select {
-		case format := <-banlistChan:
-			for i, f := range m.Formats.List {
-				if f == format.Format {
-					formats[i] = format
-					formatsLeft--
+	if banListCanBeUpdated {
+		formatsLeft := len(formats)
+
+		for formatsLeft > 0 {
+			select {
+			case format := <-banlistChan:
+				for i, f := range m.Formats.List {
+					if f == format.Format {
+						formats[i] = format
+						formatsLeft--
+					}
 				}
+			case err := <-errChan:
+				log.Fatal(err.Error())
 			}
-		case err := <-errChan:
-			log.Fatal(err.Error())
 		}
-	}
 
-	hash := generateFormatsHash(formats)
+		hash := generateFormatsHash(formats)
 
-	if hash != banlistHash {
-		updates = true
-		banlistHash = hash
-		banlistModified = time.Now()
-	} else {
-		log.Println("Banned/restricted card list up to date.")
+		if hash != banlistHash {
+			updates = true
+			banlistHash = hash
+			banlistModified = time.Now()
+		} else {
+			log.Println("Banned/restricted card list up to date.")
+		}
 	}
 
 	if updates {

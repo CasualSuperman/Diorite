@@ -90,6 +90,12 @@ type Card struct {
 	Restricted, Banned []*Format
 }
 
+func (c *Card) Is(f Filter) bool {
+	ok, err := f.Ok(c)
+
+	return ok && err == nil
+}
+
 func (s SetType) isTournamentLegal() bool {
 	return s == SetTypes.Expansion || s == SetTypes.Core
 }

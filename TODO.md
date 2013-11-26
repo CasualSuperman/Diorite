@@ -16,12 +16,13 @@ TODO
 * ~~Get a different db storage location for Windows (OSX too?) since it doesn't support the homedir method.~~
     * Confirm the storage locations for OSX and Windows are correct.
 * Rewrite the gob info to not require custom types, just use GobEncoders and GobDecoders for special types.
+    * Blockedon [Issue 6737](https://code.google.com/p/go/issues/detail?id=6737).
 * ~~Unify all the []Card and []*Cards hanging out in various places.~~
 * Check our pointer usage in various locations.
     * Diorite/Multiverse.Sets
 	* Diorite/Multiverse.Cardlist.Add
 	* Others? Go hunting!
 * ~~Rewrite server multiverse downloading to be more parallel and detect differences in banlists.~~
-* Add supertypes back in to cards.
-* Create enums for supertypes and types.
-* Add a pretty print method for cards.
+* ~~Add supertypes back in to cards.~~
+* ~~Create enums for supertypes and types.~~
+* ~~Add a pretty print method for cards.~~

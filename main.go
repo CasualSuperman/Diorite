@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
+	w "github.com/CasualSuperman/Diorite/web"
 )
 
 var local = flag.Bool("local", false, "Connect to a server running on localhost.")
@@ -49,6 +50,8 @@ func main() {
 			fmt.Println(card[0])
 		}
 	}
+
+	w.Serve(multiverse)
 }
 
 func loadLocalMultiverse(location string) (m.Multiverse, error) {

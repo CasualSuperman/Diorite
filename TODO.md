@@ -2,10 +2,12 @@ TODO
 ====
 
 * Figure out what kind of GUI we're using.
-	* QML
-	* GTK
-	* QT
+	* ~~QML~~
+	* ~~GTK~~
+	* ~~QT~~
 	* Web with embedded browser
+	    * Find/write an embedded browser.
+		* Find a good way to embed our web files instead of shipping them in a subdir.
 * ~~Finish set legality filters.~~
 * Finish other filters.
 * ~~Get a ban list/restricted list in a downloadable format.~~

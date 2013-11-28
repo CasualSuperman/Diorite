@@ -88,7 +88,7 @@ func (f *fuzzySearchList) Add(index int, similarity int) {
 	}
 
 	for i := myLen - 2; i >= 0; i-- {
-		if f.data[i].similarity < similarity {
+		if f.data[i].similarity < similarity || (f.data[i].similarity == similarity && f.data[i].index > index) {
 			f.data[i+1] = f.data[i]
 			f.data[i].index = index
 			f.data[i].similarity = similarity
@@ -137,10 +137,13 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) CardList {
 					card := cards[cardIndex]
 					name := card.ascii
 					metaphones := card.metaphones
+					matchMod := float32(1.0)
 
 					if name == searchPhrase {
 						aggregator.Add(cardIndex+start, int(^uint(0)>>1))
 						continue
+					} else if strings.HasPrefix(name, searchPhrase) {
+						matchMod = 1000
 					}
 
 					bestMatch := int(^uint(0) >> 1)
@@ -150,7 +153,7 @@ func (m Multiverse) FuzzyNameSearch(searchPhrase string, count int) CardList {
 							continue
 						}
 
-						match := int(sift3.SiftASCII(metaphone, searchMetaphone))
+						match := int(sift3.SiftASCII(metaphone, searchMetaphone) / matchMod)
 
 						if match < bestMatch {
 							bestMatch = match

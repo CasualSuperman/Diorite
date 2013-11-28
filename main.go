@@ -51,7 +51,9 @@ func main() {
 		}
 	}
 
-	w.Serve(multiverse)
+	if !*local {
+		w.Serve(multiverse)
+	}
 }
 
 func loadLocalMultiverse(location string) (m.Multiverse, error) {

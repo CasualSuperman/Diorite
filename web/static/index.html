@@ -1,18 +1,52 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
+
 	<meta charset="utf-8">
 	<title>Diorite</title>
 	<link rel="stylesheet/less" type="text/css" href="main.less">
 	<script src="less.js"></script>
 	<script src="prefixfree.min.js"></script>
+	<script>
+	var wc = new WebSocket("ws://localhost:6060/ws")
+	</script>
+
 </head>
 <body>
-	<header>
-		<h1>Diorite</h1>
-	</header>
-	<section id="main">
-		<p>Welcome to Diorite!</p>
-	</section>
+
+<header>
+	<h1>Diorite</h1>
+	<input name="cardSearch" />
+	<div id="cardSearchAutocomplete"></div>
+</header>
+<section id="main">
+	<p>Welcome to Diorite!</p>
+</section>
+<script>
+wc.onmessage = function(msg) {
+	msg = JSON.parse(msg.data);
+	switch (msg.Type) {
+	case "nameSearch":
+		var div = document.getElementById("cardSearchAutocomplete");
+		while (div.childNodes.length > 0) {
+			div.removeChild(div.firstChild);
+		}
+		for (var i = 0; i < msg.Response.length; i++) {
+			var completion = document.createElement("div");
+			completion.innerHTML = msg.Response[i];
+			div.appendChild(completion);
+		}
+	}
+}
+
+document.getElementsByName("cardSearch")[0].addEventListener("keyup", function() {
+	var val = this.value;
+	wc.send(JSON.stringify({
+		Type: "nameSearch",
+		Request: val,
+	}));
+});
+</script>
+
 </body>
 </html>

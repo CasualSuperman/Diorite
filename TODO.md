@@ -1,30 +1,29 @@
 TODO
 ====
 
-* Figure out what kind of GUI we're using.
-	* ~~QML~~
-	* ~~GTK~~
-	* ~~QT~~
-	* Web with embedded browser
-	    * Find/write an embedded browser.
-		* Find a good way to embed our web files instead of shipping them in a subdir.
-* ~~Finish set legality filters.~~
+* Web with embedded browser
+	* Find/write an embedded browser.
+	* Find a good way to embed our web files instead of shipping them in a subdir.
 * Finish other filters.
-* ~~Get a ban list/restricted list in a downloadable format.~~
-    * ~~searchthecity.me can do this! We should probably set up a service to ping their data occassionally and host it locally, since they don't send modified headers.~~
-	* ~~Need to find a way to discover differences without saving lists. Use a hash of the payload, maybe?~~
 * ~~Should rehost mtgjson.com's source before release.~~ (But give proper credit)
 * Find a card price API?
-* ~~Get a different db storage location for Windows (OSX too?) since it doesn't support the homedir method.~~
-    * Confirm the storage locations for OSX and Windows are correct.
+* Confirm the storage locations for OSX and Windows are correct.
+	* Can confirm the location for Windows at least *works*.
 * Rewrite the gob info to not require custom types, just use GobEncoders and GobDecoders for special types.
     * Blockedon [Issue 6737](https://code.google.com/p/go/issues/detail?id=6737).
-* ~~Unify all the []Card and []*Cards hanging out in various places.~~
 * Check our pointer usage in various locations.
     * Diorite/Multiverse.Sets
 	* Diorite/Multiverse.Cardlist.Add
 	* Others? Go hunting!
-* ~~Rewrite server multiverse downloading to be more parallel and detect differences in banlists.~~
-* ~~Add supertypes back in to cards.~~
-* ~~Create enums for supertypes and types.~~
-* ~~Add a pretty print method for cards.~~
+* Remember to use -ldflags="-H windowsgui" when building for windows.
+* Find a way to embed the web files into our final binary.
+	* go-bindata is a way to do this, but isn't automated or anything.
+	* We may want a custom tool for this
+		* We should probably search for one first though if we decide not to script go-bindata
+* The global multiverse variable in the web package feels hackish. I'd like an alternative.
+	* Creating a server type that holds it internally should probably work.
+* Add a console to the server application so we can force rechecks, etc.
+* Add tappedout integration?
+* Pull images from Gatherer?
+* Find a way to test the web interface.
+	* Maybe that go-webkit2 or whatever I saw on reddit.

@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 
-	ws "code.google.com/p/go.net/websocket"
+	gs "github.com/CasualSuperman/gosocket"
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
@@ -11,9 +11,14 @@ var multiverse m.Multiverse
 
 func Serve(mult m.Multiverse) {
 	multiverse = mult
+
+	socketServer := gs.NewServer()
+	http.Handle("/gs/", socketServer)
+
+	socketServer.Handle("nameSearch", fuzzyNameSearch)
+
 	http.Handle("/", http.FileServer(http.Dir("./web/static")))
 	http.Handle("/name/", http.StripPrefix("/name/", http.HandlerFunc(nameSearch)))
-	http.Handle("/ws", ws.Handler(websocketServer))
 	http.ListenAndServe(":6060", nil)
 }
 
@@ -37,32 +42,20 @@ type wsResponse struct {
 	Response interface{}
 }
 
-func websocketServer(w *ws.Conn) {
-	open := true
+type webCard struct {
+	Name string
+	MultiverseID int
+}
 
-	for open {
-		var msg wsRequest
-		err := ws.JSON.Receive(w, &msg)
-		if err != nil {
-			println(err.Error())
-			break
-		}
+func fuzzyNameSearch(c gs.Conn, d gs.Data) {
+	var searchTerm string
+	d.Receive(&searchTerm)
 
-		switch msg.Type {
-		case "close":
-			open = false
-		case "nameSearch":
-			cards := multiverse.FuzzyNameSearch(msg.Request, 15)
-			names := make([]string, len(cards))
-			for i, card := range cards {
-				names[i] = card.Name
-			}
-			ws.JSON.Send(w, wsResponse{
-				"nameSearch",
-				names,
-			})
-		default:
-			println("Type:", msg.Type)
-		}
+	results := multiverse.FuzzyNameSearch(searchTerm, 15)
+	cards := make([]webCard, len(results))
+	for i, card := range results {
+		cards[i].Name = card.Name
+		cards[i].MultiverseID = int(card.Printings[len(card.Printings)-1].ID)
 	}
+	c.Send("nameSearch", cards)
 }

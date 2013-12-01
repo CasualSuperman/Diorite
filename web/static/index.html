@@ -7,8 +7,9 @@
 	<link rel="stylesheet/less" type="text/css" href="main.less">
 	<script src="less.js"></script>
 	<script src="prefixfree.min.js"></script>
+	<script src="gs/gs.js"></script>
 	<script>
-	var wc = new WebSocket("ws://localhost:6060/ws")
+	var gs = new GoSocket("localhost:6060/gs/");
 	</script>
 
 </head>
@@ -23,28 +24,22 @@
 	<p>Welcome to Diorite!</p>
 </section>
 <script>
-wc.onmessage = function(msg) {
-	msg = JSON.parse(msg.data);
-	switch (msg.Type) {
-	case "nameSearch":
-		var div = document.getElementById("cardSearchAutocomplete");
-		while (div.childNodes.length > 0) {
-			div.removeChild(div.firstChild);
-		}
-		for (var i = 0; i < msg.Response.length; i++) {
-			var completion = document.createElement("div");
-			completion.innerHTML = msg.Response[i];
-			div.appendChild(completion);
-		}
+gs.On("nameSearch", function(cards) {
+	var div = document.getElementById("cardSearchAutocomplete");
+	while (div.childNodes.length > 0) {
+		div.removeChild(div.firstChild);
 	}
-}
+	for (var i = 0; i < cards.length; i++) {
+		var completion = document.createElement("div");
+		completion.innerHTML = cards[i].Name;
+		completion.dataset.multiverseId = cards[i].MultiverseID;
+		div.appendChild(completion);
+	}
+});
+
 
 document.getElementsByName("cardSearch")[0].addEventListener("keyup", function() {
-	var val = this.value;
-	wc.send(JSON.stringify({
-		Type: "nameSearch",
-		Request: val,
-	}));
+	gs.Send("nameSearch", this.value);
 });
 </script>
 

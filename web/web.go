@@ -3,8 +3,8 @@ package web
 import (
 	"net/http"
 
-	gs "github.com/CasualSuperman/gosocket"
 	m "github.com/CasualSuperman/Diorite/multiverse"
+	gs "github.com/CasualSuperman/gosocket"
 )
 
 var multiverse m.Multiverse
@@ -16,6 +16,7 @@ func Serve(mult m.Multiverse) {
 	http.Handle("/gs/", socketServer)
 
 	socketServer.Handle("nameSearch", fuzzyNameSearch)
+	socketServer.Handle("card", sendCard)
 
 	http.Handle("/", http.FileServer(http.Dir("./web/static")))
 	http.Handle("/name/", http.StripPrefix("/name/", http.HandlerFunc(nameSearch)))
@@ -33,23 +34,23 @@ func nameSearch(rq http.ResponseWriter, req *http.Request) {
 }
 
 type wsRequest struct {
-	Type string
+	Type    string
 	Request string
 }
 
 type wsResponse struct {
-	Type string
+	Type     string
 	Response interface{}
 }
 
 type webCard struct {
-	Name string
+	Name         string
 	MultiverseID int
 }
 
-func fuzzyNameSearch(c gs.Conn, d gs.Data) {
+func fuzzyNameSearch(msg gs.Msg) {
 	var searchTerm string
-	d.Receive(&searchTerm)
+	msg.Receive(&searchTerm)
 
 	results := multiverse.FuzzyNameSearch(searchTerm, 15)
 	cards := make([]webCard, len(results))
@@ -57,5 +58,13 @@ func fuzzyNameSearch(c gs.Conn, d gs.Data) {
 		cards[i].Name = card.Name
 		cards[i].MultiverseID = int(card.Printings[len(card.Printings)-1].ID)
 	}
-	c.Send("nameSearch", cards)
+
+	msg.Respond(cards)
+}
+
+func sendCard(msg gs.Msg) {
+	var id m.MultiverseID
+	msg.Receive(&id)
+	cards, _ := multiverse.Search(id)
+	msg.Respond(cards)
 }

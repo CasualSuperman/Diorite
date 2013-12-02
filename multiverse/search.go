@@ -34,6 +34,16 @@ func (t Type) Ok(c *Card) (bool, error) {
 	return c.Types&t != 0, nil
 }
 
+// Ok makes MultiverseID usable as a filter.
+func (m MultiverseID) Ok(c *Card) (bool, error) {
+	for i := range c.Printings {
+		if c.Printings[i].ID == m {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // Filter is a way to search through cards.
 type Filter interface {
 	Ok(*Card) (bool, error)

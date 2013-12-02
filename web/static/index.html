@@ -6,6 +6,7 @@
 	<title>Diorite</title>
 	<link rel="stylesheet/less" type="text/css" href="main.less">
 	<script src="less.js"></script>
+	<script src="cssClass.js"></script>
 	<script src="prefixfree.min.js"></script>
 	<script src="gs/gs.js"></script>
 	<script>
@@ -17,8 +18,13 @@
 
 <header>
 	<h1>Diorite</h1>
-	<input name="cardSearch" />
-	<div id="cardSearchAutocomplete"></div>
+	<div id="search">
+		<span>Search</span>
+		<div>
+			<input id="cardSearch" name="cardSearch" />
+			<div id="cardSearchAutocomplete"></div>
+		</div>
+	</div>
 </header>
 <section id="main">
 	<p>Welcome to Diorite!</p>
@@ -37,9 +43,16 @@ gs.On("nameSearch", function(cards) {
 	}
 });
 
+var searchBar = document.getElementById("cardSearch");
 
-document.getElementsByName("cardSearch")[0].addEventListener("keyup", function() {
+searchBar.addEventListener("keyup", function() {
 	gs.Send("nameSearch", this.value);
+});
+searchBar.addEventListener("focus", function() {
+	document.getElementById("search").addClass("focused");
+});
+searchBar.addEventListener("blur", function() {
+	document.getElementById("search").removeClass("focused");
 });
 </script>
 

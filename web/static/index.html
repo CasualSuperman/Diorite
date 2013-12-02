@@ -9,6 +9,7 @@
 	<script src="cssClass.js"></script>
 	<script src="prefixfree.min.js"></script>
 	<script src="gs/gs.js"></script>
+	<script src="badPractice.js"></script>
 	<script>
 	var gs = new GoSocket("localhost:6060/gs/");
 	</script>
@@ -30,29 +31,32 @@
 	<p>Welcome to Diorite!</p>
 </section>
 <script>
-gs.On("nameSearch", function(cards) {
-	var div = document.getElementById("cardSearchAutocomplete");
-	while (div.childNodes.length > 0) {
-		div.removeChild(div.firstChild);
-	}
-	for (var i = 0; i < cards.length; i++) {
-		var completion = document.createElement("div");
-		completion.innerHTML = cards[i].Name;
-		completion.dataset.multiverseId = cards[i].MultiverseID;
-		div.appendChild(completion);
-	}
-});
-
-var searchBar = document.getElementById("cardSearch");
-
-searchBar.addEventListener("keyup", function() {
-	gs.Send("nameSearch", this.value);
-});
-searchBar.addEventListener("focus", function() {
-	document.getElementById("search").addClass("focused");
-});
-searchBar.addEventListener("blur", function() {
-	document.getElementById("search").removeClass("focused");
+function loadCard(multiverseId) {
+	gs.send("card", multiverseId).response(function(msg) {
+		$("#main p").text(msg.data.Name);
+	});
+}
+$("#cardSearch").on("keyup", function() {
+	gs.send("nameSearch", this.value).response(function(msg) {
+		var cards = msg.data;
+		$("#cardSearchAutocomplete").clear().append(cards.map(function(card) {
+			return $.create("div")
+				.text(card.Name)
+				.data("multiverseId", card.MultiverseID)
+				.on("click", function() {
+					console.log("Clicked");
+					loadCard(parseInt(this.data("multiverseId")));
+				});
+		}));
+	});
+}).on("focus", function() {
+	$("#search").addClass("focused");
+}).on("blur", function() {
+	setTimeout(function() {
+		if (!this.hasFocus) {
+			$("#search").removeClass("focused");
+		}
+	}, 300);
 });
 </script>
 

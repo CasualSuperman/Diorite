@@ -66,5 +66,9 @@ func sendCard(msg gs.Msg) {
 	var id m.MultiverseID
 	msg.Receive(&id)
 	cards, _ := multiverse.Search(id)
-	msg.Respond(cards)
+	if len(cards) > 0 {
+		msg.Respond(cards[0])
+	} else {
+		msg.Respond(nil)
+	}
 }

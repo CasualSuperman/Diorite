@@ -30,10 +30,8 @@ type gobCard struct {
 	Artist string
 	Number string
 
-	Power, Toughness struct {
-		Val      float32
-		Original string
-	}
+	Power, Toughness usuallyNumeric
+	Loyalty          int
 
 	Rulings []Ruling
 
@@ -68,6 +66,7 @@ func (g *gobCard) card(sets []Set) Card {
 
 	c.Power = g.Power
 	c.Toughness = g.Toughness
+	c.Loyalty = g.Loyalty
 
 	c.Rulings = g.Rulings
 
@@ -120,6 +119,7 @@ func (c *Card) gobCard(sets []Set) gobCard {
 
 	g.Power = c.Power
 	g.Toughness = c.Toughness
+	g.Loyalty = c.Loyalty
 
 	g.Rulings = c.Rulings
 

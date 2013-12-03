@@ -34,6 +34,7 @@ type jsonCard struct {
 
 	Power     string `json:"power"`
 	Toughness string `json:"toughness"`
+	Loyalty   int    `json:"loyalty"`
 
 	Layout       string `json:"layout"`
 	MultiverseID int    `json:"multiverseid"`

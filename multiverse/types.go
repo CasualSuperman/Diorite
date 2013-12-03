@@ -78,16 +78,19 @@ type Card struct {
 	Artist string
 	Number string
 
-	Power, Toughness struct {
-		Val      float32
-		Original string
-	}
+	Power, Toughness usuallyNumeric
+	Loyalty          int
 
 	Rulings []Ruling
 
-	Printings []Printing
+	Printings []Printing `json:"-"`
 
 	Restricted, Banned []*Format
+}
+
+type usuallyNumeric struct {
+	Val      float32
+	Original string
 }
 
 func (c *Card) Is(f Filter) bool {

@@ -190,6 +190,8 @@ func (jc *jsonCard) Card() *m.Card {
 		}
 	}
 
+	c.Loyalty = jc.Loyalty
+
 	return c
 }
 

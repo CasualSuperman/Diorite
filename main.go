@@ -3,56 +3,68 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"runtime"
+	"time"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
-	w "github.com/CasualSuperman/Diorite/web"
 )
 
 var local = flag.Bool("local", false, "Connect to a server running on localhost.")
+var debug = flag.Bool("debug", false, "Keep the server alive even if the page unloads.")
+
+type exitSignal struct {
+	code   int
+	reason string
+}
+
+func exit(es exitSignal) {
+	log.Println(es.reason)
+	os.Exit(es.code)
+}
 
 func main() {
 	flag.Parse()
 	runtime.GOMAXPROCS(runtime.NumCPU() * 8)
 
-	var multiverse m.Multiverse
+	multiverseChan := make(chan *m.Multiverse)
+	exitChan := make(chan exitSignal)
 
 	multiverseDirAvailable := makeStorageDir()
+
+	var multiverse *m.Multiverse
 
 	if multiverseDirAvailable {
 		multiverse = loadMultiverse()
 	}
 
-	multiverse = downloadUpdates(multiverse)
+	server := NewServer(multiverse)
+	log.Println("Starting display server.")
+	go server.Serve(":7000", exitChan)
+	log.Println("Checking for updates.")
+	go watchForUpdates(multiverse, multiverseChan)
 
-	if !multiverse.Loaded() {
-		os.Exit(1)
-	}
-
-	log.Println("Cards in multiverse:", len(multiverse.Cards))
-
-	searchTerm := ""
-	for i := 1; i < len(os.Args); i++ {
-		if os.Args[i][0] != '-' {
-			if len(searchTerm) > 0 {
-				searchTerm += " "
-			}
-			searchTerm += os.Args[i]
+	for {
+		select {
+		case multiverse = <-multiverseChan:
+			log.Println("Multiverse updated.")
+			server.UpdateMultiverse(multiverse)
+		case code := <-exitChan:
+			exit(code)
 		}
 	}
+}
 
-	if len(searchTerm) > 0 {
-		card := multiverse.FuzzyNameSearch(searchTerm, 1)
-		if len(card) > 0 {
-			fmt.Println(card[0])
+func watchForUpdates(currMultiverse *m.Multiverse, ch chan *m.Multiverse) {
+	updateFrequency := time.Tick(5 * time.Minute)
+	for {
+		newMultiverse := downloadUpdates(currMultiverse)
+		if newMultiverse.Modified.After(currMultiverse.Modified) {
+			currMultiverse = newMultiverse
+			ch <- currMultiverse
 		}
-	}
-
-	if !*local {
-		w.Serve(multiverse)
+		<-updateFrequency
 	}
 }
 
@@ -86,7 +98,7 @@ func makeStorageDir() bool {
 	return err == nil
 }
 
-func loadMultiverse() m.Multiverse {
+func loadMultiverse() *m.Multiverse {
 	log.Println("Loading local multiverse.")
 
 	multiverse, err := loadLocalMultiverse(MultiverseFileName)
@@ -101,10 +113,10 @@ func loadMultiverse() m.Multiverse {
 		log.Println("Multiverse loaded.")
 	}
 
-	return multiverse
+	return &multiverse
 }
 
-func downloadUpdates(multiverse m.Multiverse) m.Multiverse {
+func downloadUpdates(multiverse *m.Multiverse) *m.Multiverse {
 	log.Println("Contacting update server.")
 
 	server, err := connectToServer()
@@ -165,7 +177,7 @@ func downloadUpdates(multiverse m.Multiverse) m.Multiverse {
 		}
 	} else {
 		log.Println("Multiverse downloaded!")
-		return newM
+		return &newM
 	}
 	return multiverse
 }

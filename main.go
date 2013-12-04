@@ -40,8 +40,12 @@ func main() {
 	}
 
 	server := NewServer(multiverse)
-	log.Println("Starting display server.")
-	go server.Serve(":7000", exitChan)
+
+	if !*local {
+		log.Println("Starting display server.")
+		go server.Serve(":7000", exitChan)
+	}
+
 	log.Println("Checking for updates.")
 	go watchForUpdates(multiverse, multiverseChan)
 
@@ -49,7 +53,13 @@ func main() {
 		select {
 		case multiverse = <-multiverseChan:
 			log.Println("Multiverse updated.")
-			server.UpdateMultiverse(multiverse)
+			if !*local {
+				server.UpdateMultiverse(multiverse)
+			} else {
+				go func() {
+					exitChan <- exitSignal{0, "Successfully updated."}
+				}()
+			}
 		case code := <-exitChan:
 			exit(code)
 		}

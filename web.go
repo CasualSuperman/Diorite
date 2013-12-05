@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
-	gs "github.com/CasualSuperman/GoSocket"
+	gs "github.com/CasualSuperman/gosocket"
 )
 
 type server struct {

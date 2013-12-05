@@ -17,9 +17,10 @@ TODO
 	* Others? Go hunting!
 * Remember to use -ldflags="-H windowsgui" when building for windows.
 * Find a way to embed the web files into our final binary.
-	* go-bindata is a way to do this, but isn't automated or anything.
+	* ~~go-bindata is a way to do this, but isn't automated or anything.~~
 	* We may want a custom tool for this
 		* We should probably search for one first though if we decide not to script go-bindata
+	* github.com/carbocation/gotogether ?
 * The global multiverse variable in the web package feels hackish. I'd like an alternative.
 	* Creating a server type that holds it internally should probably work.
 * Add a console to the server application so we can force rechecks, etc.

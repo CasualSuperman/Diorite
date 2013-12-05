@@ -1,19 +1,15 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-
 	<meta charset="utf-8">
 	<title>Diorite</title>
 	<link rel="stylesheet/less" type="text/css" href="main.less">
 	<script src="less.js"></script>
-	<script src="cssClass.js"></script>
 	<script src="prefixfree.min.js"></script>
 	<script src="gs/gs.js"></script>
-	<script src="badPractice.js"></script>
 	<script>
-	var gs = new GoSocket("localhost:6060/gs/");
+	var gs = new GoSocket(window.location.host + "/gs/");
 	</script>
-
 </head>
 <body>
 
@@ -30,21 +26,26 @@
 <section id="main">
 	<p>Welcome to Diorite!</p>
 </section>
+<script src="cssClass.js"></script>
+<script src="badPractice.js"></script>
 <script>
 function loadCard(multiverseId) {
 	gs.send("card", multiverseId).response(function(msg) {
+		console.log(msg.data);
 		$("#main p").text(msg.data.Name);
 	});
 }
+
 $("#cardSearch").on("keyup", function() {
+	var input = this;
 	gs.send("nameSearch", this.value).response(function(msg) {
 		var cards = msg.data;
-		$("#cardSearchAutocomplete").clear().append(cards.map(function(card) {
+		$("#cardSearchAutocomplete").empty().append(cards.map(function(card) {
 			return $.create("div")
 				.text(card.Name)
 				.data("multiverseId", card.MultiverseID)
 				.on("click", function() {
-					console.log("Clicked");
+					input.clear();
 					loadCard(parseInt(this.data("multiverseId")));
 				});
 		}));

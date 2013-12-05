@@ -2,12 +2,15 @@ Node.prototype.on = function(type, listener, useCapture) {
 	this.addEventListener(type, listener, useCapture);
 	return this;
 };
-Node.prototype.clear = function() {
+Node.prototype.empty = function() {
 	var last;
 	while (last = this.lastChild) {
 		this.removeChild(last);
 	}
 	return this;
+};
+Node.prototype.clear = function() {
+	this.value = "";
 };
 Node.prototype.text = function(content) {
 	if (content === undefined) {

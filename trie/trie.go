@@ -8,6 +8,7 @@ type Trie interface {
 	Get(string) (interface{}, bool)
 	Search(string) []interface{}
 	Remove(string) error
+	Update(string, interface{}) error
 }
 
 type mapTrie struct {
@@ -148,4 +149,34 @@ func (t mapTrie) remove(key []rune) bool {
 		return ret
 	}
 	return false
+}
+
+// Update an element to the Trie, mapped to the given value.
+func (t *mapTrie) Update(key string, val interface{}) error {
+	runes := []rune(key)
+	exists := t.update(runes, val)
+
+	if exists {
+		return errors.New("key doesn't exist")
+	}
+
+	return nil
+}
+
+func (t mapTrie) update(r []rune, val interface{}) bool {
+	if len(r) == 0 {
+		return false
+	}
+
+	if child, ok := t.children[r[0]]; ok {
+		if len(r) > 1 {
+			return child.update(r[1:], val)
+		}
+		if !child.validLeaf {
+			return true
+		}
+		child.value = val
+		return false
+	}
+	return true
 }

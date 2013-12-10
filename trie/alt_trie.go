@@ -166,3 +166,32 @@ func (t *altTrie) remove(key []rune) bool {
 	}
 	return false
 }
+
+// Update the value of an existing element in the trie.
+func (t *altTrie) Update(key string, val interface{}) error {
+	runes := []rune(key)
+	ok := t.update(runes, val)
+	if !ok {
+		return errors.New("key is not in trie")
+	}
+	return nil
+}
+
+func (t *altTrie) update(key []rune, val interface{}) bool {
+	if len(key) == 1 {
+		i := t.getChild(key[0])
+		if i == -1 {
+			return false
+		} else if !t.children[i].branch.validLeaf {
+			return false
+		}
+		t.children[i].branch.value = val
+		return true
+	}
+	i := t.getChild(key[0])
+
+	if i == -1 {
+		return false
+	}
+	return t.children[i].branch.update(key[1:], val)
+}

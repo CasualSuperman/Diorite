@@ -96,6 +96,25 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+func TestUpdate(t *testing.T) {
+	trie := New()
+
+	if trie.Update("thing", 2) == nil {
+		t.Fail()
+	}
+	trie.Add("thing", 2)
+	trie.Add("other", 3)
+	if trie.Update("thing", 4) != nil {
+		t.Fail()
+	}
+	if val, ok := trie.Get("thing"); !ok || val.(int) != 4 {
+		t.Fail()
+	}
+	if val, ok := trie.Get("other"); !ok || val.(int) != 3 {
+		t.Fail()
+	}
+}
+
 func BenchmarkAdd(b *testing.B) {
 	list, err := ioutil.ReadFile("/usr/share/dict/words")
 

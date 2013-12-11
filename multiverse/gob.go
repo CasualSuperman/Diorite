@@ -37,7 +37,7 @@ type gobCard struct {
 
 	Prints []gobPrinting
 
-	Restricted, Banned []string
+	Restricted, Banned []*Format
 }
 
 type gobPrinting struct {
@@ -78,23 +78,8 @@ func (g *gobCard) card(sets []Set) Card {
 		c.Printings[j].Set = &sets[printing.Set]
 	}
 
-	for _, format := range g.Restricted {
-		for _, f := range Formats.List {
-			if f.Name == format {
-				c.Restricted = append(c.Restricted, f)
-				break
-			}
-		}
-	}
-
-	for _, format := range g.Banned {
-		for _, f := range Formats.List {
-			if f.Name == format {
-				c.Banned = append(c.Banned, f)
-				break
-			}
-		}
-	}
+	c.Restricted = g.Restricted
+	c.Banned = g.Banned
 
 	return c
 }
@@ -125,12 +110,8 @@ func (c *Card) gobCard(sets []Set) gobCard {
 
 	g.Prints = make([]gobPrinting, len(c.Printings))
 
-	for _, format := range c.Restricted {
-		g.Restricted = append(g.Restricted, format.Name)
-	}
-	for _, format := range c.Banned {
-		g.Banned = append(g.Banned, format.Name)
-	}
+	g.Restricted = c.Restricted
+	g.Banned = c.Banned
 
 	for i := range sets {
 		for j, printing := range c.Printings {

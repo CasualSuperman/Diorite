@@ -88,14 +88,14 @@ func standardSetLegal(s *Set) bool {
 }
 
 // Ok allows Formats to also act as a Filter for searching.
-func (f *Format) Ok(c *Card) (bool, error) {
+func (f Format) Ok(c *Card) (bool, error) {
 	for _, format := range c.Restricted {
-		if format == f {
+		if format.Name == f.Name {
 			return false, nil
 		}
 	}
 	for _, format := range c.Banned {
-		if format == f {
+		if format.Name == f.Name {
 			return false, nil
 		}
 	}

@@ -1,6 +1,7 @@
 TODO
 ====
 
+* Parse rules text.
 * Web with embedded browser
 	* Find/write an embedded browser.
 	* Find a good way to embed our web files instead of shipping them in a subdir.
@@ -22,8 +23,8 @@ TODO
 	* Made sure all the structs are using pointers properly.
 	* Still need to check on arguments/method receivers.
 * Remember to use -ldflags="-H windowsgui" when building for windows.
-* The global multiverse variable in the web package feels hackish. I'd like an alternative.
-	* Creating a server type that holds it internally should probably work.
+* ~~The global multiverse variable in the web package feels hackish. I'd like an alternative.~~
+	* ~~Creating a server type that holds it internally should probably work.~~
 * Add a console to the server application so we can force rechecks, etc.
 * Add tappedout integration?
 * Pull images from Gatherer?

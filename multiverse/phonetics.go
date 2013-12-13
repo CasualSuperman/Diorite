@@ -1,6 +1,7 @@
 package multiverse
 
 import (
+	"bytes"
 	"runtime"
 	"strings"
 	"sync"
@@ -12,25 +13,26 @@ import (
 )
 
 func preventUnicode(name string) string {
+	var clean bytes.Buffer
+
 	name = strings.ToLower(name)
 
-	clean := ""
 	for _, r := range name {
 		if r > 128 {
 			switch r {
 			case 'á', 'à', 'â':
-				clean += "a"
+				clean.WriteByte('a')
 			case 'é':
-				clean += "e"
+				clean.WriteByte('e')
 			case 'í':
-				clean += "i"
+				clean.WriteByte('i')
 			case 'ö':
-				clean += "o"
+				clean.WriteByte('o')
 			case 'û', 'ú':
-				clean += "u"
+				clean.WriteByte('u')
 
 			case 'Æ', 'æ':
-				clean += "ae"
+				clean.WriteString("ae")
 
 			case '®':
 				// We know this is an option but we're explicitly ignoring it.
@@ -39,12 +41,12 @@ func preventUnicode(name string) string {
 			}
 		} else {
 			if r == ' ' || unicode.IsLetter(r) || r == '_' || r == '-' {
-				clean += string(r)
+				clean.WriteRune(r)
 			}
 		}
 	}
 
-	return clean
+	return clean.String()
 }
 
 type fuzzySearchList struct {

@@ -4,12 +4,23 @@ import (
 	"math"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
 const setReleaseFormat = "2006-01-02"
+
+func sanitize(s string) string {
+	s = strings.Map(func(r rune) rune {
+		if r == 0 {
+			return -1
+		}
+		return r
+	}, s)
+	return s
+}
 
 // Convert to a Multiverse.
 func (om onlineMultiverse) Convert() (mv m.Multiverse) {
@@ -57,6 +68,8 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 				rarity = m.Rarities.Special
 			case "Basic Land":
 				rarity = m.Rarities.Basic
+			default:
+				panic("unknown rarity")
 			}
 
 			var printing = m.Printing{
@@ -97,7 +110,7 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 
 func (jc *jsonCard) Card() *m.Card {
 	c := new(m.Card)
-	c.Name = jc.Name
+	c.Name = sanitize(jc.Name)
 	c.Cmc = jc.Cmc
 	c.Cost = jc.ManaCost
 
@@ -156,15 +169,15 @@ func (jc *jsonCard) Card() *m.Card {
 
 	c.Subtypes = jc.Subtypes
 
-	c.Text = jc.Text
-	c.Flavor = jc.Flavor
-	c.Artist = jc.Artist
+	c.Text = sanitize(jc.Text)
+	c.Flavor = sanitize(jc.Flavor)
+	c.Artist = sanitize(jc.Artist)
 	c.Number = jc.Number
 
 	c.Rulings = make([]m.Ruling, len(jc.Rulings))
 
 	for i, ruling := range jc.Rulings {
-		c.Rulings[i].Text = ruling.Text
+		c.Rulings[i].Text = sanitize(ruling.Text)
 		c.Rulings[i].Date, _ = time.Parse("2006-01-02", ruling.Date)
 	}
 

@@ -35,8 +35,8 @@ func getFormatLists(ret chan formatList, errChan chan error) {
 			defer externalGroup.Done()
 			list := formatList{
 				format,
-				make(banList),
-				make(banList),
+				make(map[string]bool),
+				make(map[string]bool),
 			}
 
 			var internalGroup sync.WaitGroup
@@ -44,7 +44,7 @@ func getFormatLists(ret chan formatList, errChan chan error) {
 
 			go func() {
 				defer internalGroup.Done()
-				if banned, err := getBannedList(format.Name); err == nil {
+				if banned, err := getBanList(format.Name); err == nil {
 					for _, name := range banned {
 						list.Banned[name] = true
 					}
@@ -57,7 +57,7 @@ func getFormatLists(ret chan formatList, errChan chan error) {
 				internalGroup.Add(1)
 				go func() {
 					defer internalGroup.Done()
-					if restricted, err := getRestrictedList(format.Name); err == nil {
+					if restricted, err := getRestrictList(format.Name); err == nil {
 						for _, name := range restricted {
 							list.Restricted[name] = true
 						}

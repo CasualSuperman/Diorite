@@ -9,12 +9,10 @@ import (
 
 type formatList struct {
 	Format             *m.Format
-	Banned, Restricted banList
+	Banned, Restricted map[string]bool
 }
 
-type banList map[string]bool
-
-func (b banList) Cards() []string {
+func makeCardList(b map[string]bool) []string {
 	s := make([]string, len(b))
 	i := 0
 	for key := range b {
@@ -38,8 +36,8 @@ func generateFormatsHash(formats []formatList) uint64 {
 	hash := fnv.New64()
 
 	for _, f := range formats {
-		banned := f.Banned.Cards()
-		restricted := f.Restricted.Cards()
+		banned := makeCardList(f.Banned)
+		restricted := makeCardList(f.Restricted)
 
 		for _, name := range banned {
 			hash.Write([]byte(name))

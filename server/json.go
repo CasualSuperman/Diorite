@@ -61,6 +61,11 @@ type onlineMultiverse struct {
 	Modified time.Time
 }
 
+// Reset the multiverse.
+func (om *onlineMultiverse) Reset() {
+	om.Sets = nil
+}
+
 type setSorter struct {
 	sets []m.Set
 	by   func(s1, s2 *m.Set) bool

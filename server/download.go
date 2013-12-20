@@ -90,13 +90,13 @@ func getMultiverse(ret chan m.Multiverse, errChan chan error) {
 		errChan <- err
 	}
 
-	defer resp.Body.Close()
-
 	dec := json.NewDecoder(resp.Body)
 
 	if err = dec.Decode(&structure.Sets); err != nil {
 		errChan <- err
 	}
+
+	resp.Body.Close()
 
 	log.Println("JSON converted.")
 
@@ -116,6 +116,8 @@ func getMultiverse(ret chan m.Multiverse, errChan chan error) {
 	log.Println("Structure converted.")
 
 	ret <- multiverse
+
+	structure.Reset()
 }
 
 func getOnline(method string) (*http.Response, error) {

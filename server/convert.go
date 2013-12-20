@@ -101,10 +101,6 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 		}
 	}
 
-	newCards := make([]m.Card, len(mv.Cards))
-	copy(newCards, mv.Cards)
-	mv.Cards = newCards
-
 	return
 }
 

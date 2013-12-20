@@ -25,7 +25,7 @@ func makeCardList(b map[string]bool) []string {
 	return s
 }
 
-func clearBanlists() {
+func clearBanlists(multiverse *m.Multiverse) {
 	for i := range multiverse.Cards {
 		multiverse.Cards[i].Banned = nil
 		multiverse.Cards[i].Restricted = nil

@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -19,14 +20,9 @@ import (
 var port = flag.String("port", ":5050", "The port to run the server on.")
 var test = flag.Bool("travis", false, "Exit after a single download for testing.")
 
-var multiverse m.Multiverse
-
-var banlist []formatList
-var banlistHash uint64
-var banlistModified time.Time
-
 var downloadData []byte
 var downloadModified time.Time
+var banlistHash uint64
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU() * 8)
@@ -44,21 +40,14 @@ func main() {
 }
 
 func doDownload(done *sync.WaitGroup) {
+	var multiverse m.Multiverse
 	defer done.Done()
 	multiverseChan := make(chan m.Multiverse)
 	banlistChan := make(chan formatList, len(m.Formats.List))
 	errChan := make(chan error)
 	updates := false
 
-	_, _, date := time.Now().Date()
-
-	banListCanBeUpdated := banlistHash == 0 || date == 20 || date == 1
-
-	if banListCanBeUpdated {
-		go getFormatLists(banlistChan, errChan)
-	} else {
-		log.Println("Banlists are only updated on the 20th and are put into effect on the 1st.")
-	}
+	go getFormatLists(banlistChan, errChan)
 
 	if mod, err := onlineModifiedAt(); err == nil && mod.After(multiverse.Modified) {
 		go getMultiverse(multiverseChan, errChan)
@@ -78,39 +67,40 @@ func doDownload(done *sync.WaitGroup) {
 		log.Println("Multiverse up to date.")
 	}
 
+	debug.FreeOSMemory()
+
 	formats := make([]formatList, len(m.Formats.List))
 
-	if banListCanBeUpdated {
-		formatsLeft := len(formats)
+	formatsLeft := len(formats)
 
-		for formatsLeft > 0 {
-			select {
-			case format := <-banlistChan:
-				for i, f := range m.Formats.List {
-					if f == format.Format {
-						formats[i] = format
-						formatsLeft--
-					}
+	for formatsLeft > 0 {
+		select {
+		case format := <-banlistChan:
+			for i, f := range m.Formats.List {
+				if f == format.Format {
+					formats[i] = format
+					formatsLeft--
 				}
-			case err := <-errChan:
-				log.Fatal(err.Error())
 			}
+		case err := <-errChan:
+			log.Fatal(err.Error())
 		}
+	}
 
-		hash := generateFormatsHash(formats)
+	hash := generateFormatsHash(formats)
 
-		if hash != banlistHash {
-			updates = true
-			banlistHash = hash
-			banlistModified = time.Now()
-		} else {
-			log.Println("Banned/restricted card list up to date.")
-		}
+	debug.FreeOSMemory()
+
+	if hash != banlistHash {
+		updates = true
+		banlistHash = hash
+	} else {
+		log.Println("Banned/restricted card list up to date.")
 	}
 
 	if updates {
 		log.Println("Clearing banlists.")
-		clearBanlists()
+		clearBanlists(&multiverse)
 
 		log.Println("Marking banned/restricted cards.")
 		for i, card := range multiverse.Cards {
@@ -141,6 +131,10 @@ func doDownload(done *sync.WaitGroup) {
 
 		b.Reset()
 	}
+
+	multiverse = m.Multiverse{}
+
+	debug.FreeOSMemory()
 
 	log.Println("Multiverse ready.")
 }

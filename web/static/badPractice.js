@@ -50,8 +50,11 @@ NodeList.prototype.on = function() {
 		elem.on.apply(elem, arguments);
 	});
 };
-window.$ = function(node, selector) {
-	var elems = document.querySelectorAll(node, selector);
+window.$ = function(selector, context) {
+	if (context == undefined) {
+		context = document;
+	}
+	var elems = context.querySelectorAll(selector);
 	return elems.length == 1 ? elems[0] : elems;
 }
 window.$.create = function(elem) {

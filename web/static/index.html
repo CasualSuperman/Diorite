@@ -10,21 +10,62 @@
 	<script>
 	var gs = new GoSocket(window.location.host + "/gs/");
 	</script>
+	<link rel="import" href="elements/card.html" />
 </head>
 <body>
+<template id="mtg_card">
+	<style scoped>
+	@host { * {
+		border: 0.5em solid black;
+		border-radius: 0.5em;
+		display: inline-block;
+	} }
+	.rulestext {
+		text-align: center;
+	}
+	.cost, .set {
+		float: right;
+	}
+	</style>
+	<div class="namebar">
+		<span class="name">Cancel</span>
+		<span class="cost">1UU</span>
+	</div>
+	<img src="notfound.jpg" class="art" />
+	<div class="typebar">
+		<span class="supertypes"></span>
+		<span class="types">Instant</span>
+		<span class="subtypes"></span>
+		<img class="set" src="sets/m14.jpg" />
+	</div>
+	<div class="textblock">
+		<div class="rulestext">
+			<p>Counter target spell.</p>
+		</div>
+		<div class="flavortext">
+		</div>
+	</div>
+	<div class="metabar">
+		<span class="artist">David Palumbo</span>
+		<br />
+		<span class="copyright">&trade; &amp; &copy; 2013 Wixards of the Coast</span>
+		<span class="setnumber">45/249</span>
+	</div>
+</template>
 
 <header>
 	<h1>Diorite</h1>
-	<div id="search">
-		<span>Search</span>
-		<div>
-			<input id="cardSearch" name="cardSearch" />
-			<div id="cardSearchAutocomplete"></div>
+	<div class="search">
+		<label for="cardSearch">Search</label>
+		<div class="container">
+			<input name="cardSearch" />
+			<div class="autocomplete" id="cardSearchAutocomplete"></div>
 		</div>
 	</div>
 </header>
 <section id="main">
 	<p>Welcome to Diorite!</p>
+	<mtg-card></mtg-card>
 </section>
 <script src="cssClass.js"></script>
 <script src="badPractice.js"></script>
@@ -36,30 +77,34 @@ function loadCard(multiverseId) {
 	});
 }
 
-$("#cardSearch").on("keyup", function() {
+$("header .search input").on("keyup", function() {
 	var input = this;
 	gs.send("nameSearch", this.value).response(function(msg) {
 		var cards = msg.data;
-		$("#cardSearchAutocomplete").empty().append(cards.map(function(card) {
+		var autocomplete = $(".autocomplete", input.parentNode);
+		cards = cards.map(function(card) {
 			return $.create("div")
 				.text(card.Name)
 				.data("multiverseId", card.MultiverseID)
-				.on("click", function() {
-					input.clear();
+				.on("mousedown", function() {
 					loadCard(parseInt(this.data("multiverseId")));
+					input.clear();
+					autocomplete.empty();
 				});
-		}));
+		});
+		autocomplete.empty().append(cards);
 	});
 }).on("focus", function() {
-	$("#search").addClass("focused");
+	this.classList.add("focused");
 }).on("blur", function() {
-	setTimeout(function() {
+	setTimeout((function() {
 		if (!this.hasFocus) {
-			$("#search").removeClass("focused");
+			this.classList.remove("focused");
 		}
-	}, 300);
+	}).bind(this), 150);
 });
 </script>
 
+<script src="elements/card.js"></script>
 </body>
 </html>

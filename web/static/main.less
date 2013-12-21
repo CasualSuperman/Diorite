@@ -24,58 +24,61 @@ header {
 	}
 }
 
-#search {
+header .search {
 	margin-left: 3em;
 	overflow:visible;
 	position:relative;
 
-	& > * {
+	& > label, & > .container {
 		display: inline-block;
 	}
 
-	span {
+	label {
 		font-size: 1.1em;
 		vertical-align: super;
 	}
-
-	#cardSearchAutocomplete {
-		display: none;
-	}
-
-	&.focused #cardSearchAutocomplete {
-		display: block;
-	}
 }
 
-#cardSearch {
-	background-color: @light;
-	border: 0.25em solid @medium;
-	color: @dark;
-	font-size: 1.2em;
-	margin: 0;
-	outline: none;
-	vertical-align: super;
-}
-
-#cardSearchAutocomplete {
-	background-color: @light;
-	border: 0.25em solid @medium;
-	border-bottom-style: none;
-	color: @dark;
-	overflow: visible;
-	margin-top: -0.25em;
-	position: absolute;
-	white-space: nowrap;
-
-	div {
-		border-bottom: 0.25em solid @medium;
-		cursor: pointer;
+.search {
+	input {
+		background-color: @light;
+		border: 0.25em solid @medium;
+		color: @dark;
+		font-size: 1.2em;
+		margin: 0;
 		padding: 0.125em;
+		vertical-align: super;
+
+		&:focus {
+			outline: none;
+
+			& + .autocomplete {
+				display: block;
+			}
+		}
 	}
 
-	div:hover {
-		background-color: @dark;
-		color: @light;
+	.autocomplete {
+		background-color: @light;
+		border: 0.25em solid @medium;
+		border-bottom-style: none;
+		color: @dark;
+		display: none;
+		overflow: visible;
+		margin-top: -0.25em;
+		position: absolute;
+		white-space: nowrap;
+
+		div {
+			border-bottom: 0.25em solid @medium;
+			cursor: pointer;
+			padding: 0.125em;
+		}
+
+		div:hover {
+			background-color: @dark;
+			color: @light;
+		}
 	}
 }
 

@@ -1,6 +1,7 @@
 package trie
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -43,13 +44,14 @@ func TestSubstringAdd(t *testing.T) {
 	err := trie.Add("sand", 7)
 
 	if err != nil {
+		t.Log(err.Error())
 		t.Error("Substring wasn't added.")
 	}
 
 	val, ok := trie.Get("sand")
 
 	if !ok {
-		t.Error("Could not find substring")
+		t.Fatal("Could not find substring")
 	}
 	if val.(int) != 7 {
 		t.Error("Could not get value for substring")
@@ -59,12 +61,28 @@ func TestSubstringAdd(t *testing.T) {
 func TestSearch(t *testing.T) {
 	trie := New()
 	trie.Add("sand", 1)
-	trie.Add("sandpaper", 1)
-	trie.Add("sanity", 2)
+	trie.Add("sandpaper", 2)
+	trie.Add("sanity", 3)
 	if x := trie.Search("san"); len(x) != 3 {
 		t.Fail()
 	}
 	if x := trie.Search("sand"); len(x) != 2 {
+		t.Fail()
+	}
+	results := trie.Search("sand")
+
+	hasSand := false
+	hasSandPaper := false
+
+	for _, result := range results {
+		if result == 1 {
+			hasSand = true
+		} else if result == 2 {
+			hasSandPaper = true
+		}
+	}
+
+	if !hasSandPaper || !hasSand {
 		t.Fail()
 	}
 }
@@ -77,6 +95,7 @@ func TestRemove(t *testing.T) {
 	if x := trie.Remove("sand"); x != nil {
 		t.Error("Couldn't remove sand.")
 	} else if len(trie.Search("sand")) != 1 {
+		fmt.Println(trie)
 		t.Logf("%v\n", trie.Search("sand"))
 		t.Error("Sand wasn't removed.")
 	}
@@ -88,11 +107,6 @@ func TestRemove(t *testing.T) {
 	} else if len(trie.Search("s")) != 1 {
 		t.Logf("%v\n", trie.Search("s"))
 		t.Error("Sandlot wasn't removed.")
-	}
-
-	if len(trie.children['s'].children['a'].children['n'].children) != 1 {
-		t.Logf("%v\n", trie.children['s'].children['a'].children['n'].children)
-		t.Error("Subtree wasn't deleted properly.")
 	}
 }
 
@@ -114,6 +128,7 @@ func TestUpdate(t *testing.T) {
 		t.Fail()
 	}
 }
+
 
 func BenchmarkAdd(b *testing.B) {
 	list, err := ioutil.ReadFile("/usr/share/dict/words")

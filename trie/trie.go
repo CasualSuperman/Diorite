@@ -1,7 +1,5 @@
 package trie
 
-import "errors"
-
 // A Trie is similar to a Map, but mapTrieost operations are O(log n), and it allows for finding similar elements.
 type Trie interface {
 	Add(string, interface{}) error
@@ -11,172 +9,253 @@ type Trie interface {
 	Update(string, interface{}) error
 }
 
-type mapTrie struct {
-	value     interface{}
-	validLeaf bool
-	children  map[rune]*mapTrie
+type (
+	emptyKeyError bool
+	keynotFoundError string
+	duplicateKeyError string
+)
+
+func emptyKey() error {
+	return emptyKeyError(true)
 }
 
-// New returns an initialized, empty Trie.
-func New() *mapTrie {
-	return &mapTrie{nil, false, make(map[rune]*mapTrie)}
+func notFound(key string) error {
+	return keynotFoundError(key)
+}
+
+func duplicateKey(key string) error {
+	return duplicateKeyError(key)
+}
+
+func (err emptyKeyError) Error() string {
+	return "key empty"
+}
+
+func (err keynotFoundError) Error() string {
+	return "key not in trie: '" + string(err) + "'"
+}
+
+func (err duplicateKeyError) Error() string {
+	return "key already in trie: '" + string(err) + "'"
+}
+
+type trie struct {
+	children  []branch
+	value     interface{}
+	validLeaf bool
+}
+
+type branch struct {
+	letter byte
+	branch *trie
+}
+
+type stackNode struct {
+	index int
+	leaf  *trie
+}
+
+// Iter returns a fully iterative implementation of a Trie, which is faster and uses less stack space.
+func New() Trie {
+	return &trie{nil, nil, false}
+}
+
+func (t *trie) getChild(r byte) int {
+	for i, child := range t.children {
+		if child.letter == r {
+			return i
+		}
+	}
+	return -1
 }
 
 // Add an element to the Trie, mapped to the given value.
-func (t *mapTrie) Add(key string, val interface{}) error {
-	runes := []rune(key)
-	exists := t.add(runes, val)
-
-	if exists {
-		return errors.New("key already exists")
+func (t *trie) Add(key string, val interface{}) error {
+	if key == "" {
+		return emptyKey()
 	}
+
+	root := t
+
+	for len(key) > 0 {
+		i := root.getChild(key[0])
+
+		if i == -1 {
+			branch := branch{
+				key[0],
+				&trie{
+					nil,
+					nil,
+					false,
+				},
+			}
+			root.children = append(root.children, branch)
+			root = branch.branch
+		} else {
+			root = root.children[i].branch
+		}
+
+		key = key[1:]
+	}
+
+	if root.validLeaf {
+		return duplicateKey(key)
+	}
+
+	root.validLeaf = true
+	root.value = val
 
 	return nil
 }
 
-func (t mapTrie) add(r []rune, val interface{}) bool {
-	if len(r) == 0 {
-		return false
-	}
-
-	if child, ok := t.children[r[0]]; ok {
-		if len(r) > 1 {
-			return child.add(r[1:], val)
-		}
-		if child.validLeaf {
-			return true
-		}
-		child.validLeaf = true
-		child.value = val
-	} else {
-		if len(r) > 1 {
-			child := mapTrie{
-				nil,
-				false,
-				make(map[rune]*mapTrie),
-			}
-			t.children[r[0]] = &child
-
-			return child.add(r[1:], val)
-		}
-		t.children[r[0]] = &mapTrie{
-			val,
-			true,
-			make(map[rune]*mapTrie),
-		}
-	}
-	return false
-}
-
 // Get a value from the Trie.
 // Uses a comma ok format.
-func (t *mapTrie) Get(key string) (interface{}, bool) {
-	if len(key) == 0 {
+func (t *trie) Get(key string) (interface{}, bool) {
+	if key == "" {
 		return nil, false
 	}
-	return t.get([]rune(key))
-}
 
-func (t mapTrie) get(key []rune) (interface{}, bool) {
-	if len(key) == 0 {
-		return t.value, t.validLeaf
+	root := t
+
+	for len(key) > 0 {
+		i := root.getChild(key[0])
+
+		if i == -1 {
+			return nil, false
+		}
+
+		root = root.children[i].branch
+		key = key[1:]
 	}
-	if child, ok := t.children[key[0]]; ok {
-		return child.get(key[1:])
+
+	if root.validLeaf {
+		return root.value, true
 	}
+
 	return nil, false
 }
 
 // Search the Trie for all keys starting with the key.
 // A full listing of the Trie is possible using t.Search("")
-func (t *mapTrie) Search(key string) []interface{} {
-	results := t.search([]rune(key))
-	if results == nil {
-		results = make([]interface{}, 0)
+func (t *trie) Search(key string) []interface{} {
+	root := t
+	branch := make([]stackNode, 1, 32)
+	results := make([]interface{}, 0)
+
+	for len(key) > 0 {
+		next := root.getChild(key[0])
+		if next == -1 {
+			return results
+		}
+		root = root.children[next].branch
+		key = key[1:]
+	}
+
+	branch[0] = stackNode{-1, root}
+	tip := 0
+
+	for tip >= 0 {
+		branch[tip].index++
+		if branch[tip].index >= len(branch[tip].leaf.children) {
+			if branch[tip].leaf.validLeaf {
+				results = append(results, branch[tip].leaf.value)
+			}
+			branch = branch[:tip]
+			tip--
+			continue
+		}
+
+		next := branch[tip].leaf
+		branch = append(branch, stackNode{
+			-1,
+			next.children[branch[tip].index].branch,
+		})
+		tip++
 	}
 	return results
 }
 
-func (t mapTrie) search(key []rune) []interface{} {
-	if len(key) == 0 {
-		var options []interface{}
-		for _, child := range t.children {
-			options = append(options, child.search(key)...)
-		}
-		if t.validLeaf {
-			options = append(options, t.value)
-		}
-		return options
-	}
-	if child, ok := t.children[key[0]]; ok {
-		return child.search(key[1:])
-	}
-	return nil
-}
-
 // Remove the key from the Trie.
 // The Trie will compact itself if possible.
-func (t *mapTrie) Remove(key string) error {
-	runes := []rune(key)
+func (t *trie) Remove(key string) error {
+	tip := -1
+	branch := make([]stackNode, 0, 32)
+	root := t
 
-	if !t.remove(runes) {
-		errors.New("key not in trie")
+	for len(key) > 0 {
+		i := root.getChild(key[0])
+
+		if i == -1 {
+			return notFound(key)
+		}
+
+		branch = append(branch, stackNode{
+			i,
+			root,
+		})
+
+		root = root.children[i].branch
+		key = key[1:]
+		tip++
+
+		if len(key) == 0 {
+			branch = append(branch, stackNode{
+				0,
+				root,
+			})
+			tip++
+		}
 	}
 
-	return nil
-}
+	if branch[tip].leaf.validLeaf {
+		branch[tip].leaf.value = nil
+		branch[tip].leaf.validLeaf = false
+	} else {
+		return notFound(key)
+	}
 
-func (t mapTrie) remove(key []rune) bool {
-	if len(key) == 1 {
-		if child, ok := t.children[key[0]]; ok {
-			if len(child.children) == 0 {
-				delete(t.children, key[0])
-			} else {
-				child.validLeaf = false
-				child.value = nil
+	for tip > 0 {
+		if !branch[tip].leaf.validLeaf && len(branch[tip].leaf.children) == 0 {
+			trim := branch[tip-1]
+			trim.leaf.children[trim.index] = trim.leaf.children[len(trim.leaf.children)-1]
+			trim.leaf.children[len(trim.leaf.children)-1].branch = nil
+			trim.leaf.children = trim.leaf.children[:len(trim.leaf.children)-1]
+			if len(trim.leaf.children) == 0 {
+				trim.leaf.children = nil
 			}
-			return true
+			tip--
+		} else {
+			break
 		}
-		return false
-	}
-
-	if child, ok := t.children[key[0]]; ok {
-		ret := child.remove(key[1:])
-
-		if !child.validLeaf && len(child.children) == 0 {
-			delete(t.children, key[0])
-		}
-		return ret
-	}
-	return false
-}
-
-// Update an element to the Trie, mapped to the given value.
-func (t *mapTrie) Update(key string, val interface{}) error {
-	runes := []rune(key)
-	exists := t.update(runes, val)
-
-	if exists {
-		return errors.New("key doesn't exist")
 	}
 
 	return nil
 }
 
-func (t mapTrie) update(r []rune, val interface{}) bool {
-	if len(r) == 0 {
-		return false
+// Update the value of an existing element in the trie.
+func (t *trie) Update(key string, val interface{}) error {
+	if key == "" {
+		return emptyKey()
 	}
 
-	if child, ok := t.children[r[0]]; ok {
-		if len(r) > 1 {
-			return child.update(r[1:], val)
+	root := t
+
+	for len(key) > 0 {
+		i := root.getChild(key[0])
+		
+		if i == -1 {
+			return notFound(key)
 		}
-		if !child.validLeaf {
-			return true
-		}
-		child.value = val
-		return false
+
+		root = root.children[i].branch
+		key = key[1:]
 	}
-	return true
+
+	if !root.validLeaf {
+		return notFound(key)
+	}
+
+	root.value = val
+
+	return nil
 }

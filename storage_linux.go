@@ -2,4 +2,4 @@ package main
 
 import "os"
 
-var defaultLocation = os.ExpandEnv("${HOME}/.diorite/multiverse.mtg")
+var defaultLocation = os.ExpandEnv("${HOME}/.local/share/diorite/multiverse.mtg")

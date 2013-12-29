@@ -83,6 +83,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	if !hasSandPaper || !hasSand {
+		t.Log(results)
 		t.Fail()
 	}
 }
@@ -195,5 +196,24 @@ func BenchmarkSearch(b *testing.B) {
 		}
 		t.Search(words[j])
 	}
+}
 
+func BenchmarkGlobalSearch(b *testing.B) {
+	list, err := ioutil.ReadFile("/usr/share/dict/words")
+
+	if err != nil {
+		b.Error(err)
+	}
+
+	words := strings.Split(string(list), "\n")
+	t := New()
+
+	for _, word := range words {
+		t.Add(word, true)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		t.Search("")
+	}
 }

@@ -62,6 +62,20 @@ func (t *trie) getChildBranch(r byte) *trie {
 	return nil
 }
 
+func (t *trie) removeChild(c *trie) {
+	last := len(t.children)-1
+
+	for i, child := range t.children {
+		if child.branch == c {
+			if i < last {
+				t.children[i], t.children[last] = t.children[last], t.children[i]
+				break
+			}
+		}
+	}
+	t.children = t.children[:last]
+}
+
 func (t *trie) removeChildIndex(i int) {
 	last := len(t.children)-1
 	if i < last {
@@ -76,19 +90,16 @@ func (t *trie) Add(key string, val interface{}) error {
 		return emptyKey()
 	}
 
-	root := t
-
-	for len(key) > 0 {
-		root = root.getOrAddChildBranch(key[0])
-		key = key[1:]
+	for i, l := 0, len(key); i < l; i++ {
+		t = t.getOrAddChildBranch(key[i])
 	}
 
-	if root.validLeaf {
+	if t.validLeaf {
 		return duplicateKey(key)
 	}
 
-	root.validLeaf = true
-	root.value = val
+	t.validLeaf = true
+	t.value = val
 
 	return nil
 }
@@ -100,19 +111,12 @@ func (t *trie) Get(key string) (interface{}, bool) {
 		return nil, false
 	}
 
-	root := t
-
-	for len(key) > 0 {
-		root = root.getChildBranch(key[0])
-		key = key[1:]
-
-		if root == nil {
-			return nil, false
-		}
+	for i, l := 0, len(key); i < l && t != nil; i++ {
+		t = t.getChildBranch(key[i])
 	}
 
-	if root.validLeaf {
-		return root.value, true
+	if t != nil && t.validLeaf {
+		return t.value, true
 	}
 
 	return nil, false
@@ -124,45 +128,57 @@ func (t *trie) Search(key string) []interface{} {
 	var inlineStack [16]stackNode
 	var results []interface{}
 
-	root := t
+	for i, l := 0, len(key); i < l && t != nil; i++ {
+		t = t.getChildBranch(key[i])
+	}
 
-	for len(key) > 0 {
-		root = root.getChildBranch(key[0])
-		key = key[1:]
-		if root == nil {
-			return results
-		}
+	if t == nil {
+		return results
 	}
 
 	tip := 0
-	// The first item on the stack is the last character of our key.
-	inlineStack[0] = stackNode{-1, root}
-	branch := traversalStack(inlineStack[0:1])
+	// The first item on the stack is the node positioned at the last character of our key.
+	inlineStack[0] = stackNode{-1, t}
+	stack := traversalStack(inlineStack[0:1])
 
 	// To help visualize, this is a depth-first search.
+	// We start at the node representing the end of the search key, and look at
+	// its first child.  We put it on the stack, and proceed down the first
+	// children of all these nodes until we hit a leaf.  We then check that
+	// leaf to see if it is a validLeaf, and if it is, we put it onto the
+	// results list.  After that, we increment the index into our children. If
+	// this is greater than the number of children of the node, then we are
+	// done with this node's children.  We then look at that node's validLeaf
+	// status, and add it to the results if it's valid.  Then, we go on to that
+	// node's nextSibling, etc.
 	for tip >= 0 {
 		// Move on to the next sibling of the last leaf we processed.
-		branch[tip].index++
+		stack[tip].index++
 
 		// Check to see if we're out of children.
-		if branch[tip].index >= len(branch[tip].leaf.children) {
+		if stack[tip].index >= len(stack[tip].leaf.children) {
 			// We are, so add ourselves if we're a valid leaf.
-			if branch[tip].leaf.validLeaf {
-				results = append(results, branch[tip].leaf.value)
+			if stack[tip].leaf.validLeaf {
+				results = append(results, stack[tip].leaf.value)
 			}
 			// This branch is completely done; remove it from the stack.
-			branch = branch[:tip]
+			stack = stack[:tip]
 			tip--
 			continue
 		}
 
-		// Not out of children, push the next one onto the stack.
-		branch = append(branch, stackNode{
-			// We start at -1 because the first thing we do is increment this.
-			-1,
-			branch[tip].leaf.children[branch[tip].index].branch,
-		})
-		tip++
+		next := stack[tip].leaf.children[stack[tip].index].branch
+
+		// Avoid pushing leaves onto the stack.
+		if len(next.children) > 0 {
+			// Next node has children, push it onto the stack.
+			stack = append(stack, stackNode{-1, next})
+			tip++
+		} else {
+			// The next node doesn't have children, don't bother putting it on the stack.
+			// Since we maintain a minimum tree, it will always be a validLeaf.
+			results = append(results, next.value)
+		}
 	}
 	return results
 }
@@ -170,58 +186,41 @@ func (t *trie) Search(key string) []interface{} {
 // Remove the key from the Trie.
 // The Trie will compact itself if possible.
 func (t *trie) Remove(key string) error {
-	var inlineStack [16]stackNode
-	tip := -1
-	branch := traversalStack(inlineStack[0:0])
-	root := t
+	var inlineStack [16]*trie
+	stack := inlineStack[0:0]
 
-	for len(key) > 0 {
-		i := root.getChild(key[0])
-
-		if i == -1 {
-			return notFound(key)
-		}
-
-		branch = append(branch, stackNode{
-			i,
-			root,
-		})
-
-		root = root.children[i].branch
-		key = key[1:]
-		tip++
+	// Identify the leaf associated with the key, and add every node we traverse to our stack.
+	for i, l := 0, len(key); i < l && t != nil; i++ {
+		stack = append(stack, t)
+		t = t.getChildBranch(key[i])
 	}
 
-	branch = append(branch, stackNode{
-		0,
-		root,
-	})
-	tip++
-
-	if !branch[tip].leaf.validLeaf {
+	if t == nil || !t.validLeaf {
 		return notFound(key)
 	}
 
-	branch[tip].leaf.value = nil
-	branch[tip].leaf.validLeaf = false
+	stack = append(stack, t)
+	tip := len(key)
 
-	// Chop off our dead branches.
+	stack[tip].value = nil
+	stack[tip].validLeaf = false
+
+	// Chop off our dead branches to free unneeded memory.
 	for tip > 0 {
 		// If this branch isn't a valid leaf and has no children.
-		if !branch[tip].leaf.validLeaf && len(branch[tip].leaf.children) == 0 {
-			// Find our parent.
-			trim := branch[tip-1]
-			// Remove us from our parent. (quickly if possible)
-			if len(trim.leaf.children) == 1 {
-				trim.leaf.children = nil
-			} else {
-				trim.leaf.removeChildIndex(trim.index)
-			}
-			// Become our parent and repeat this process.
-			tip--
-		} else {
+		if stack[tip].validLeaf || len(stack[tip].children) > 0 {
 			break
 		}
+		// Find our parent.
+		trim := stack[tip-1]
+		// Remove us from our parent. (quickly if possible)
+		if len(trim.children) == 1 {
+			trim.children = nil
+		} else {
+			trim.removeChild(stack[tip])
+		}
+		// Repeat this process with our parent.
+		tip--
 	}
 
 	return nil
@@ -233,22 +232,15 @@ func (t *trie) Update(key string, val interface{}) error {
 		return emptyKey()
 	}
 
-	root := t
-
-	for len(key) > 0 {
-		root = root.getChildBranch(key[0])
-		key = key[1:]
-		
-		if root == nil {
-			return notFound(key)
-		}
+	for i, l := 0, len(key); i < l && t != nil; i++ {
+		t = t.getChildBranch(key[i])
 	}
 
-	if !root.validLeaf {
+	if t == nil || !t.validLeaf {
 		return notFound(key)
 	}
 
-	root.value = val
+	t.value = val
 
 	return nil
 }

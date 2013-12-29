@@ -1,8 +1,6 @@
 package main
 
-import "path/filepath"
-
 // The location for storing the multiverse.
-var MultiverseFileName = filepath.FromSlash(defaultLocation)
+var MultiverseFileName string
 // The folder that should contain the multiverse.
-var StorageDir = filepath.Dir(MultiverseFileName)
+var StorageDir string

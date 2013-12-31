@@ -11,8 +11,10 @@ import (
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
-var local = flag.Bool("local", false, "Connect to a server running on localhost.")
-var debug = flag.Bool("debug", false, "Keep the server alive even if the page unloads.")
+var local = flag.Bool("local", false, "Connect to an update server running on localhost.")
+var noserver = flag.Bool("noserver", false, "Don't start a web server.")
+var keepserver = flag.Bool("keepserver", false, "Keep the server alive even if the page unloads.")
+var playing = flag.Bool("playing", false, "Skip the main program and do whatever crazy thing you're working on at the moment.")
 
 type exitSignal struct {
 	code   int
@@ -39,29 +41,35 @@ func main() {
 		multiverse = loadMultiverse()
 	}
 
-	server := NewServer(multiverse)
+	if !*playing {
 
-	if !*local {
-		log.Println("Starting display server.")
-		go server.Serve(":7000", exitChan)
-	}
 
-	log.Println("Checking for updates.")
-	go watchForUpdates(multiverse, multiverseChan)
 
-	for {
-		select {
-		case multiverse = <-multiverseChan:
-			log.Println("Multiverse updated.")
-			if !*local {
-				server.UpdateMultiverse(multiverse)
-			} else {
-				go func() {
-					exitChan <- exitSignal{0, "Successfully updated."}
-				}()
+		server := NewServer(multiverse)
+
+		if !*noserver {
+			log.Println("Starting display server.")
+			go server.Serve(":7000", exitChan)
+		}
+
+		log.Println("Checking for updates.")
+		go watchForUpdates(multiverse, multiverseChan)
+
+		for {
+			select {
+			case multiverse = <-multiverseChan:
+				if !*noserver {
+					if multiverse != nil {
+						server.UpdateMultiverse(multiverse)
+					}
+				} else {
+					go func() {
+						exitChan <- exitSignal{0, "Exiting."}
+					}()
+				}
+			case code := <-exitChan:
+				exit(code)
 			}
-		case code := <-exitChan:
-			exit(code)
 		}
 	}
 }
@@ -73,6 +81,8 @@ func watchForUpdates(currMultiverse *m.Multiverse, ch chan *m.Multiverse) {
 		if newMultiverse.Modified.After(currMultiverse.Modified) {
 			currMultiverse = newMultiverse
 			ch <- currMultiverse
+		} else {
+			ch <- nil
 		}
 		<-updateFrequency
 	}
@@ -118,6 +128,8 @@ func loadMultiverse() *m.Multiverse {
 			log.Println("No local database available. A local copy will be downloaded.")
 		} else {
 			log.Printf("Unable to load multiverse: %s\n", err)
+			log.Println("Removing local multiverse.")
+			os.Remove(MultiverseFileName)
 		}
 	} else {
 		log.Println("Multiverse loaded.")
@@ -158,36 +170,39 @@ func downloadUpdates(multiverse *m.Multiverse) *m.Multiverse {
 	data := server.RawMultiverse()
 	buf := bytes.NewBuffer(data)
 
-	saveTo, err := os.Create(MultiverseFileName)
-
-	if err != nil {
-		log.Println("Unable to save update to multiverse. Continuing, but it will be redownloaded on next startup.")
-	} else {
-		_, err := saveTo.Write(data)
-		if err != nil && multiverse.Loaded() {
-			log.Println("Error saving multiverse. Rolling back changes.")
-			saveTo.Truncate(0)
-			multiverse.Write(saveTo)
-			saveTo.Close()
-		} else if err != nil {
-			log.Println("Error saving Multiverse. Removing.")
-			saveTo.Close()
-			os.Remove(MultiverseFileName)
-		}
-	}
-
 	newM, err := m.Read(buf)
 
 	if err != nil {
 		log.Printf("Error updating: %s\n", err)
 		if !multiverse.Loaded() {
-			log.Println("Downloading multiverse failed and no local database available. Unable to continue.")
+			log.Fatalln("Unable to load local multiverse and no download available. Exiting.")
 		} else {
 			log.Println("Unable to download most recent multiverse. Continuing with an out-of-date version.")
 		}
-	} else {
-		log.Println("Multiverse downloaded!")
-		return &newM
+
+		return multiverse
 	}
-	return multiverse
+
+	saveTo, err := os.Create(MultiverseFileName)
+
+	if err != nil {
+		log.Println("Unable to save update to multiverse. Continuing, but it will be redownloaded on next startup.")
+		return multiverse
+	}
+
+	_, err = saveTo.Write(data)
+
+	if err != nil && multiverse.Loaded() {
+		log.Println("Error saving multiverse. Rolling back changes.")
+		saveTo.Truncate(0)
+		multiverse.Write(saveTo)
+		saveTo.Close()
+	} else if err != nil {
+		log.Println("Error saving Multiverse. Removing.")
+		saveTo.Close()
+		os.Remove(MultiverseFileName)
+	}
+
+	log.Println("Multiverse downloaded!")
+	return &newM
 }

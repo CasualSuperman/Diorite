@@ -29,7 +29,7 @@ func (s *server) Serve(port string, exit chan exitSignal) {
 		println(err.Error())
 	})
 
-	if !*debug {
+	if !*keepserver {
 		socketServer.On(gs.Disconnect, func(c *gs.Conn) {
 			exit <- exitSignal{0, "Web interface closed."}
 		})

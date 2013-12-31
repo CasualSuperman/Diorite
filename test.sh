@@ -14,7 +14,7 @@ go build -o diorite.bin
 sleep 0.1
 
 # Start our client
-./diorite.bin -local
+./diorite.bin -local -noserver
 
 # Clean up
 rm diorite.bin server.bin

@@ -6,6 +6,19 @@ import (
 	"strings"
 )
 
+// Filter is a way to search through cards.
+type Filter interface {
+	Ok(*Card) (bool, error)
+}
+
+// Func is a generic type that allows a client to pass in any function that makes a boolean decision based on a card.
+type Func func(*Card) bool
+
+// Ok makes a Func usable as a Filter.
+func (f Func) Ok(c *Card) (bool, error) {
+	return f(c), nil
+}
+
 // Ok makes Rarity usable as a Filter.
 func (r Rarity) Ok(c *Card) (bool, error) {
 	for _, printing := range c.Printings {
@@ -42,19 +55,6 @@ func (m MultiverseID) Ok(c *Card) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-// Filter is a way to search through cards.
-type Filter interface {
-	Ok(*Card) (bool, error)
-}
-
-// Func is a generic type that allows a client to pass in any function that makes a boolean decision based on a card.
-type Func func(*Card) bool
-
-// Ok makes a Func usable as a Filter.
-func (f Func) Ok(c *Card) (bool, error) {
-	return f(c), nil
 }
 
 // Search for cards that match the given conditions.

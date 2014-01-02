@@ -35,7 +35,7 @@ func (s *server) Serve(port string, exit chan exitSignal) {
 		})
 	}
 
-	http.Handle("/", http.FileServer(http.Dir("./web/static")))
+	http.Handle("/", http.FileServer(http.Dir("./content")))
 	http.ListenAndServe(port, nil)
 }
 

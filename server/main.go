@@ -207,7 +207,7 @@ func provideDownload(conn net.Conn, done bool, ready *sync.WaitGroup) {
 			return
 
 		default:
-			answer := fmt.Sprintf("Unrecognized request '%s'.\n")
+			answer := fmt.Sprintf("Unrecognized request '%s'.\n", text)
 			log.Printf(answer)
 			conn.Write([]byte(answer))
 		}

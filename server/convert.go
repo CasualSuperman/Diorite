@@ -73,9 +73,9 @@ func (om onlineMultiverse) Convert() (mv m.Multiverse) {
 			}
 
 			var printing = m.Printing{
-				m.MultiverseID(jCard.MultiverseID),
-				&mv.Sets[setIndex],
-				rarity,
+				ID:     m.MultiverseID(jCard.MultiverseID),
+				Set:    &mv.Sets[setIndex],
+				Rarity: rarity,
 			}
 
 			index, ok := cardIndexCache[jCard.Name]

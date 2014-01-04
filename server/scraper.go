@@ -63,7 +63,6 @@ func getGenericList(baseUrl string) (cardList []string, err error) {
 			return
 		}
 
-
 		scrape(root, urls, cards)
 	}
 

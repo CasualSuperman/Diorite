@@ -16,10 +16,24 @@
 <template id="mtg_card">
 	<style scoped>
 	@host { * {
-		border: 0.5em solid black;
+		border: 10px solid black;
 		border-radius: 0.5em;
+		box-sizing: border-box;
 		display: inline-block;
+		height: 453px;
+		padding: 9px;
+		padding-bottom: 0;
+		width: 320px;
 	} }
+	.namebar {
+		font-family: Matrix;
+		height: 23px;
+	}
+	.namebar .name {
+		font-size: 20px;
+		margin-left: 2px;
+		vertical-align: sub;
+	}
 	.rulestext {
 		text-align: center;
 	}
@@ -48,7 +62,7 @@
 	<div class="metabar">
 		<span class="artist">David Palumbo</span>
 		<br />
-		<span class="copyright">&trade; &amp; &copy; 2013 Wixards of the Coast</span>
+		<span class="copyright">&trade; &amp; &copy; 2013 Wizards of the Coast</span>
 		<span class="setnumber">45/249</span>
 	</div>
 </template>
@@ -65,7 +79,8 @@
 </header>
 <section id="main">
 	<p>Welcome to Diorite!</p>
-	<mtg-card></mtg-card>
+	<mtg-card style="float:left"></mtg-card>
+	<img src="http://magiccards.info/scans/en/m14/45.jpg" style="vertical-align: -webkit-baseline-middle; float:left; position: relative; left:-316px; top:4px; opacity: 0.9; /*visibility: hidden;*/" />
 </section>
 <script src="cssClass.js"></script>
 <script src="badPractice.js"></script>

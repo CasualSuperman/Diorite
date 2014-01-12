@@ -25,9 +25,6 @@ func (s *server) Serve(port string, exit chan exitSignal) {
 
 	socketServer.Handle("nameSearch", s.fuzzyNameSearch)
 	socketServer.Handle("card", s.sendCard)
-	socketServer.Errored(func(err error) {
-		println(err.Error())
-	})
 
 	if !*keepserver {
 		socketServer.On(gs.Disconnect, func(c *gs.Conn) {

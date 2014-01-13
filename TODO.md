@@ -2,8 +2,8 @@ TODO
 ====
 
 * Parse rules text.
-* Find a replacement for searchthecity.me now that it's just an info site.
-    * Port the code?
+* ~~Find a replacement for searchthecity.me now that it's just an info site.~~
+    * ~~Port the code?~~
 * Web with embedded browser
 	* Find/write an embedded browser.
 	* Find a good way to embed our web files instead of shipping them in a subdir.

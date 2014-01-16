@@ -56,7 +56,7 @@ func (s *server) fuzzyNameSearch(msg gs.Msg) {
 	msg.Receive(&searchTerm)
 
 	results := s.multiverse.FuzzyNameSearch(searchTerm, 15)
-	cards := make([]webCard, len(results))
+	cards := make([]webCard, results.Len())
 	for i, card := range results {
 		cards[i].Name = card.Name
 		cards[i].MultiverseID = int(card.Printings[len(card.Printings)-1].ID)
@@ -69,7 +69,7 @@ func (s *server) sendCard(msg gs.Msg) {
 	var id m.MultiverseID
 	msg.Receive(&id)
 	cards, _ := s.multiverse.Search(id)
-	if len(cards) > 0 {
+	if cards.Len() > 0 {
 		err := msg.Respond(cards[0])
 		if err != nil {
 			println(err.Error())

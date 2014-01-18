@@ -88,12 +88,14 @@ func getMultiverse(ret chan m.Multiverse, errChan chan error) {
 
 	if err != nil {
 		errChan <- err
+		return
 	}
 
 	dec := json.NewDecoder(resp.Body)
 
 	if err = dec.Decode(&structure.Sets); err != nil {
 		errChan <- err
+		return
 	}
 
 	resp.Body.Close()
@@ -105,6 +107,7 @@ func getMultiverse(ret chan m.Multiverse, errChan chan error) {
 
 	if err != nil {
 		errChan <- err
+		return
 	}
 
 	structure.Modified = rModTime

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"log"
@@ -11,7 +13,7 @@ import (
 	m "github.com/CasualSuperman/Diorite/multiverse"
 )
 
-const remoteDBLocation = "http://mtgjson.com/json/AllSets-x.json"
+const remoteDBLocation = "http://mtgjson.com/json/AllSets-x.json.zip"
 const lastModifiedFormat = time.RFC1123
 
 func onlineModifiedAt() (time.Time, error) {
@@ -84,21 +86,45 @@ func getMultiverse(ret chan m.Multiverse, errChan chan error) {
 
 	resp, err := getOnline("GET")
 
-	log.Println("Multiverse downloaded. Converting JSON.")
+	log.Println("Multiverse downloaded. Unzipping.")
 
 	if err != nil {
 		errChan <- err
 		return
 	}
 
-	dec := json.NewDecoder(resp.Body)
+	defer resp.Body.Close()
+
+	var b bytes.Buffer
+	b.ReadFrom(resp.Body)
+
+	r, err := zip.NewReader(bytes.NewReader(b.Bytes()), int64(b.Len()))
+
+	b.Reset()
+
+	if err != nil {
+		errChan <- err
+		return
+	}
+
+	file, err := r.File[0].Open()
+
+	if err != nil {
+		errChan <- err
+		return
+	}
+
+	defer file.Close()
+
+	log.Println("Multiverse unzipped. Decoding JSON.")
+
+	dec := json.NewDecoder(file)
+	//dec := NewOnlineMultiverseDecoder(resp.Body)
 
 	if err = dec.Decode(&structure.Sets); err != nil {
 		errChan <- err
 		return
 	}
-
-	resp.Body.Close()
 
 	log.Println("JSON converted.")
 

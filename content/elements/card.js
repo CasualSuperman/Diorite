@@ -10,6 +10,6 @@ MtgCardPrototype.createdCallback = function() {
 	}
 };
 
-var MtgCard = document.register('mtg-card', {
+var MtgCard = document.registerElement('mtg-card', {
 	prototype: MtgCardPrototype
 });

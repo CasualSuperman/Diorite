@@ -26,6 +26,52 @@
 
 <style>
 mtg-card {
-	dislay: block;
+	border: 10px solid black;
+	border-radius: 0.5em;
+	box-sizing: border-box;
+	display: inline-block;
+	height: 453px;
+	overflow: hidden;
+	padding: 9px;
+	padding-bottom: 0;
+	width: 320px;
+}
+mtg-card .namebar {
+	font-family: Matrix;
+	height: 23px;
+}
+mtg-card .namebar .name {
+	font-size: 20px;
+	margin-left: 2px;
+	vertical-align: sub;
+}
+mtg-card .rulestext {
+	text-align: center;
+}
+mtg-card .cost, .set {
+	float: right;
 }
 </style>
+
+<script>
+var thisDoc = document.currentScript.ownerDocument;
+var outerDoc = document;
+outerDoc.importNode(thisDoc.getElementById("mtg_card").content, true);
+
+var MtgCardPrototype = Object.create(HTMLElement.prototype);
+var tempElem = thisDoc.querySelector("template");
+
+MtgCardPrototype.createdCallback = function() {
+	var shadow = this.createShadowRoot();
+	var copy = outerDoc.importNode(tempElem.content, true);
+	shadow.appendChild(copy);
+	var id = this.getAttribute("multiverse-id");
+	if (id) {
+		//shadow.innerHTML = ;
+	}
+};
+
+var MtgCard = outerDoc.registerElement('mtg-card', {
+	prototype: MtgCardPrototype
+});
+</script>

@@ -13,60 +13,6 @@
 	<link rel="import" href="elements/card.html" />
 </head>
 <body>
-<template id="mtg_card">
-	<style scoped>
-	@host { * {
-		border: 10px solid black;
-		border-radius: 0.5em;
-		box-sizing: border-box;
-		display: inline-block;
-		height: 453px;
-		padding: 9px;
-		padding-bottom: 0;
-		width: 320px;
-	} }
-	.namebar {
-		font-family: Matrix;
-		height: 23px;
-	}
-	.namebar .name {
-		font-size: 20px;
-		margin-left: 2px;
-		vertical-align: sub;
-	}
-	.rulestext {
-		text-align: center;
-	}
-	.cost, .set {
-		float: right;
-	}
-	</style>
-	<div class="namebar">
-		<span class="name">Cancel</span>
-		<span class="cost">1UU</span>
-	</div>
-	<img src="notfound.jpg" class="art" />
-	<div class="typebar">
-		<span class="supertypes"></span>
-		<span class="types">Instant</span>
-		<span class="subtypes"></span>
-		<img class="set" src="sets/m14.jpg" />
-	</div>
-	<div class="textblock">
-		<div class="rulestext">
-			<p>Counter target spell.</p>
-		</div>
-		<div class="flavortext">
-		</div>
-	</div>
-	<div class="metabar">
-		<span class="artist">David Palumbo</span>
-		<br />
-		<span class="copyright">&trade; &amp; &copy; 2013 Wizards of the Coast</span>
-		<span class="setnumber">45/249</span>
-	</div>
-</template>
-
 <header>
 	<h1>Diorite</h1>
 	<div class="search">
@@ -82,8 +28,10 @@
 	<mtg-card style="float:left"></mtg-card>
 	<img src="http://magiccards.info/scans/en/m14/45.jpg" style="vertical-align: -webkit-baseline-middle; float:left; position: relative; left:-316px; top:4px; opacity: 0.9; /*visibility: hidden;*/" />
 </section>
+
 <script src="cssClass.js"></script>
 <script src="badPractice.js"></script>
+
 <script>
 function loadCard(multiverseId) {
 	gs.send("card", multiverseId).response(function(msg) {
@@ -120,6 +68,5 @@ $("header .search input").on("keyup", function() {
 });
 </script>
 
-<script src="elements/card.js"></script>
 </body>
 </html>

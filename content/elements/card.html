@@ -22,36 +22,37 @@
 		<span class="copyright">&trade; &amp; &copy; 2013 Wizards of the Coast</span>
 		<span class="setnumber">45/249</span>
 	</div>
+	<style scoped>
+	@host {
+		:scope {
+			border: 10px solid black;
+			border-radius: 0.5em;
+			box-sizing: border-box;
+			display: inline-block;
+			height: 453px;
+			overflow: hidden;
+			padding: 9px;
+			padding-bottom: 0;
+			width: 320px;
+		}
+	}
+	.namebar {
+		font-family: Matrix;
+		height: 23px;
+	}
+	.namebar .name {
+		font-size: 20px;
+		margin-left: 2px;
+		vertical-align: sub;
+	}
+	.rulestext {
+		text-align: center;
+	}
+	.cost, .set {
+		float: right;
+	}
+	</style>
 </template>
-
-<style>
-mtg-card {
-	border: 10px solid black;
-	border-radius: 0.5em;
-	box-sizing: border-box;
-	display: inline-block;
-	height: 453px;
-	overflow: hidden;
-	padding: 9px;
-	padding-bottom: 0;
-	width: 320px;
-}
-mtg-card .namebar {
-	font-family: Matrix;
-	height: 23px;
-}
-mtg-card .namebar .name {
-	font-size: 20px;
-	margin-left: 2px;
-	vertical-align: sub;
-}
-mtg-card .rulestext {
-	text-align: center;
-}
-mtg-card .cost, .set {
-	float: right;
-}
-</style>
 
 <script>
 var thisDoc = document.currentScript.ownerDocument;

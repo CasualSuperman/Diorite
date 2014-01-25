@@ -72,7 +72,15 @@ MtgCardPrototype.createdCallback = function() {
 	}
 };
 
-var MtgCard = outerDoc.registerElement('mtg-card', {
-	prototype: MtgCardPrototype
-});
+var MtgCard;
+if (outerDoc.registerElement) {
+	MtgCard = outerDoc.registerElement('mtg-card', {
+		prototype: MtgCardPrototype
+	});
+} else {
+	MtgCard = outerDoc.register('mtg-card', {
+		prototype: MtgCardPrototype
+	});
+}
+
 </script>

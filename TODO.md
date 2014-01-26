@@ -13,6 +13,7 @@ TODO
 		* github.com/carbocation/gotogether ?
 * Finish other filters.
 * ~~Should rehost mtgjson.com's source before release.~~ (But give proper credit)
+    * ~~Use their new zip file to save their bandwidth.~~
 * Find a card price API?
 * Confirm the storage locations for OSX and Windows are correct.
 	* Can confirm the location for Windows at least *works*.

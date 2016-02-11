@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"code.google.com/p/lzma"
+	"github.com/lxq/lzma"
 )
 
 type gobMutiverse struct {

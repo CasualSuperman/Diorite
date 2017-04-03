@@ -1,8 +1,7 @@
 language: go
 
 go:
-    - 1.6rc2
-    - 1.5.3
-    - tip
+    - 1.x
+    - master
 
 script: "./test.sh"
